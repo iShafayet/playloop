@@ -13,18 +13,13 @@ export const defaultViewOptionList = [
 
 export const Collection = {
   TAG: "tag",
-  RECORD: "record",
+  PLAY_SESSION: "play-session",
   MEMO: "memo",
   // Gaming collections
   GAME: "game",
   PLATFORM: "platform",
   GAME_STATUS_HISTORY: "game-status-history",
   GAME_OWNERSHIP: "game-ownership",
-};
-
-export const RecordType = {
-  // Gaming record types
-  GAMING_SESSION: "gaming-session",
 };
 
 export const defaultTagColor = "#444444";
