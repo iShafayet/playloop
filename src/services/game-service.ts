@@ -1,7 +1,7 @@
 import { Collection } from "src/constants/constants";
 import { Game } from "src/models/game";
 import { GameStatusHistory } from "src/models/game-status-history";
-import { GameOwnership } from "src/models/game-ownership";
+// GameOwnership is no longer a separate entity - ownership is now stored in Game.ownershipList
 import { PlaySession } from "src/models/play-session";
 import { pouchdbService } from "./pouchdb-service";
 
@@ -62,35 +62,7 @@ class GameService {
     return saved as GameStatusHistory;
   }
 
-  async getGameOwnership(gameId: string, platformId?: string): Promise<GameOwnership[]> {
-    const res = await pouchdbService.listByCollection(Collection.GAME_OWNERSHIP);
-    let ownership = res.docs as GameOwnership[];
-    ownership = ownership.filter((o) => o.gameId === gameId);
-    if (platformId) {
-      ownership = ownership.filter((o) => o.platformId === platformId);
-    }
-    // Sort by timestamp descending (most recent first)
-    ownership.sort((a, b) => b.timestamp - a.timestamp);
-    return ownership;
-  }
-
-  async getCurrentGameOwnership(gameId: string, platformId: string): Promise<GameOwnership | null> {
-    const ownership = await this.getGameOwnership(gameId, platformId);
-    return ownership.length > 0 ? ownership[0] : null;
-  }
-
-  async setGameOwnership(gameId: string, platformId: string, ownershipType: GameOwnership["ownershipType"], notes?: string): Promise<GameOwnership> {
-    const ownership: GameOwnership = {
-      $collection: Collection.GAME_OWNERSHIP,
-      gameId,
-      platformId,
-      ownershipType,
-      timestamp: Date.now(),
-      notes,
-    };
-    const saved = await pouchdbService.upsertDoc(ownership);
-    return saved as GameOwnership;
-  }
+  // Ownership is now stored directly in Game.ownershipList, so these methods are no longer needed
 
   async getGameSessions(gameId: string, platformId?: string): Promise<PlaySession[]> {
     const res = await pouchdbService.listByCollection(Collection.PLAY_SESSION);
