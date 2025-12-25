@@ -114,6 +114,12 @@ const gamingList = [
     link: "#/platforms",
   },
   {
+    title: "Tags",
+    caption: "Game tags",
+    icon: "label",
+    link: "#/tags",
+  },
+  {
     title: "Pro Mode - Games",
     caption: "Bulk edit games",
     icon: "table_chart",

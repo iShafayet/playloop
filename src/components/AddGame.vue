@@ -59,6 +59,7 @@
           </div>
 
           <q-input filled v-model="releaseDate" type="date" label="Release Date" />
+          <select-tag v-model="selectedTagIds" label="Tags" />
           <q-toggle v-model="isRetroGame" label="Is Retro Game" color="green" left-label />
           
           <q-separator class="q-my-md" />
@@ -123,6 +124,7 @@ import { GameStatus } from "src/models/game-status";
 import { Platform } from "src/models/platform";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
+import SelectTag from "./SelectTag.vue";
 
 // Props
 const props = defineProps<{
@@ -153,6 +155,7 @@ const gameForm: Ref<QForm | null> = ref(null);
 
 const gameName: Ref<string | null> = ref(null);
 const releaseDate: Ref<string | null> = ref(null);
+const selectedTagIds: Ref<string[]> = ref([]);
 const isRetroGame = ref(false);
 const hasUntrackedHistory = ref(false);
 
@@ -219,6 +222,7 @@ onMounted(async () => {
         const date = new Date(res.releaseDate);
         releaseDate.value = date.toISOString().split("T")[0];
       }
+      selectedTagIds.value = res.tagIdList || [];
       isRetroGame.value = res.isRetroGame || false;
 
       // Load existing ownership from game.ownershipList
@@ -303,6 +307,7 @@ async function okClicked() {
     platformIdList: selectedPlatformIds, // Keep for backward compatibility
     ownershipList: ownershipList,
     untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
+    tagIdList: selectedTagIds.value.length > 0 ? selectedTagIds.value : undefined,
     isRetroGame: isRetroGame.value,
   };
 

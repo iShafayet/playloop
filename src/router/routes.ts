@@ -54,6 +54,12 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuthentication: true, title: "Platforms", rememberable: true },
       },
       {
+        path: "tags",
+        name: "tags",
+        component: () => import("pages/TagsPage.vue"),
+        meta: { requiresAuthentication: true, title: "Tags", rememberable: true },
+      },
+      {
         path: "sessions",
         name: "sessions",
         component: () => import("pages/SessionsPage.vue"),

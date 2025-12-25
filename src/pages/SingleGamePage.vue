@@ -31,6 +31,23 @@
           </div>
         </div>
 
+        <!-- Tags -->
+        <div class="q-mb-lg" v-if="game?.tagIdList && game.tagIdList.length > 0">
+          <div class="text-h6 q-mb-md">Tags</div>
+          <q-card flat bordered>
+            <q-card-section>
+              <q-chip
+                v-for="tagId in game.tagIdList"
+                :key="tagId"
+                :label="getTagName(tagId)"
+                :style="{ backgroundColor: getTagColor(tagId), color: getTagContrastColor(tagId) }"
+                size="md"
+                class="q-mr-sm q-mb-sm"
+              />
+            </q-card-section>
+          </q-card>
+        </div>
+
         <!-- Overall Statistics -->
         <div class="q-mb-lg">
           <div class="text-h6 q-mb-md">Overall Statistics</div>
@@ -206,8 +223,10 @@ import { Platform } from "src/models/platform";
 import { PlaySession } from "src/models/play-session";
 import { GameStatusHistory } from "src/models/game-status-history";
 import { GameOwnershipEntry, GameUntrackedHistoryEntry } from "src/models/game";
+import { Tag } from "src/models/tag";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
+import { tagService } from "src/services/tag-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import AddGame from "src/components/AddGame.vue";
@@ -223,6 +242,7 @@ const loadingIndicator = ref<InstanceType<typeof LoadingIndicator>>();
 
 const game: Ref<Game | null> = ref(null);
 const platformsMap = ref(new Map<string, Platform>());
+const tagsMap = ref(new Map<string, Tag>());
 const totalPlaytime = ref(0);
 const totalSessions = ref(0);
 const averageSessionDuration = ref(0);
@@ -264,6 +284,28 @@ function formatDate(epoch: number): string {
 
 function getPlatformName(platformId: string): string {
   return platformsMap.value.get(platformId)?.name || platformId;
+}
+
+function getTagName(tagId: string): string {
+  return tagsMap.value.get(tagId)?.name || tagId;
+}
+
+function getTagColor(tagId: string): string {
+  return tagsMap.value.get(tagId)?.color || "#444444";
+}
+
+function getTagContrastColor(tagId: string): string {
+  const color = getTagColor(tagId);
+  // Convert hex to RGB
+  const r = parseInt(color.slice(1, 3), 16);
+  const g = parseInt(color.slice(3, 5), 16);
+  const b = parseInt(color.slice(5, 7), 16);
+  
+  // Calculate luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  
+  // Return black or white based on luminance
+  return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
 function getSessionDuration(session: PlaySession): number {
@@ -334,6 +376,13 @@ async function loadData() {
     platforms.forEach((p) => {
       if (p._id) {
         platformsMap.value.set(p._id, p);
+      }
+    });
+
+    const tags = await tagService.listTags();
+    tags.forEach((t) => {
+      if (t._id) {
+        tagsMap.value.set(t._id, t);
       }
     });
 

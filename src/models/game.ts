@@ -19,6 +19,7 @@ export type Game = {
   platformIdList: string[]; // Kept for backward compatibility, can be derived from ownershipList
   ownershipList?: GameOwnershipEntry[];
   untrackedHistoryList?: GameUntrackedHistoryEntry[];
+  tagIdList?: string[];
   releaseDate?: number; // epoch timestamp
   isRetroGame: boolean;
 };

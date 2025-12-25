@@ -1,8 +1,9 @@
 import { User } from "src/models/user";
 import { useUserStore } from "src/stores/user";
 import { pouchdbService } from "./pouchdb-service";
-import { Collection } from "src/constants/constants";
+import { Collection, defaultTagColor } from "src/constants/constants";
 import { Platform } from "src/models/platform";
+import { Tag } from "src/models/tag";
 import { sleep } from "src/utils/misc-utils";
 import { OFFLINE_DOMAIN, OFFLINE_SERVER_URL } from "src/constants/auth-constants";
 
@@ -37,8 +38,9 @@ class OnboardingService {
    */
   async setupDefaultAccounts(progressCallback?: (progress: OnboardingProgress) => void): Promise<void> {
     const steps = [
-      { message: "Creating game platforms...", weight: 50 },
-      { message: "Finalizing setup...", weight: 50 },
+      { message: "Creating game platforms...", weight: 40 },
+      { message: "Creating default tags...", weight: 30 },
+      { message: "Finalizing setup...", weight: 30 },
     ];
 
     let currentProgress = 0;
@@ -61,6 +63,9 @@ class OnboardingService {
           await this.createDefaultPlatforms();
           break;
         case 1:
+          await this.createDefaultTags();
+          break;
+        case 2:
           await this.finalizeSetup();
           break;
       }
@@ -101,6 +106,27 @@ class OnboardingService {
         notes: platform.notes,
       };
       await pouchdbService.upsertDoc(platformDoc);
+    }
+  }
+
+  /**
+   * Creates default tags
+   */
+  private async createDefaultTags(): Promise<void> {
+    const tags = [
+      { name: "Nostalgia", color: "#9C27B0" },
+      { name: "Hidden Gem", color: "#00BCD4" },
+      { name: "Favorite", color: "#FF9800" },
+      { name: "Recommended", color: "#4CAF50" },
+    ];
+
+    for (const tag of tags) {
+      const tagDoc: Tag = {
+        $collection: Collection.TAG,
+        name: tag.name,
+        color: tag.color,
+      };
+      await pouchdbService.upsertDoc(tagDoc);
     }
   }
 
