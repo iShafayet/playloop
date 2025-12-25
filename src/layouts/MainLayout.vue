@@ -23,7 +23,7 @@
 
         <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Playloop</div>
         <div class="dev-mode-notification" v-if="isDevDatabase">DEV DB</div>
-        <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine">PROD DB in DEV ENV</div>
+        <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine && !isOfflineDatabase">PROD DB in DEV ENV</div>
 
         <q-btn flat dense round icon="perm_identity">
           <q-menu>
@@ -83,6 +83,7 @@
 <script setup lang="ts">
 import EssentialLink from "components/sidebar/EssentialLink.vue";
 import { useQuasar } from "quasar";
+import { OFFLINE_DOMAIN } from "src/constants/auth-constants";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
 import { authService } from "src/services/auth-service";
 import { dialogService } from "src/services/dialog-service";
@@ -163,12 +164,13 @@ const miscList = [
 const leftDrawerOpen = ref(false);
 const isDevDatabase = ref(false);
 const isDevMachine = ref(false);
+const isOfflineDatabase = ref(false);
 
 const userStore = useUserStore();
 const $q = useQuasar();
 const router = useRouter();
 
-function checkIfInDevMode() {
+function determineMode() {
   isDevDatabase.value = false;
   isDevMachine.value = false;
   if (userStore.user && userStore.user.domain.indexOf("test") > -1) {
@@ -178,11 +180,13 @@ function checkIfInDevMode() {
   if (window.location.host.indexOf("localhost") > -1 || window.location.host.indexOf("127.0.0.1") > -1) {
     isDevMachine.value = true;
   }
+
+  isOfflineDatabase.value = (userStore.user?.isOfflineUser || false) && userStore.user?.domain === OFFLINE_DOMAIN;
 }
 
-userStore.$subscribe(checkIfInDevMode);
+userStore.$subscribe(determineMode);
 onMounted(() => {
-  checkIfInDevMode();
+  determineMode();
   syncService.setUpPouchdbListener();
   handleRouteChange(route.fullPath, null);
   informApplicationHasLoaded();
