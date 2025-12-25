@@ -1,0 +1,55 @@
+import { sleep } from "src/utils/misc-utils";
+import { dialogService } from "./dialog-service";
+import { authService } from "./auth-service";
+import { DEFAULT_REMOTE_SERVER_URL } from "../constants/auth-constants";
+
+const LOCAL_STORAGE_KEY__DOMAIN = "--lm-config--domain";
+const LOCAL_STORAGE_KEY__SERVER_URL = "--lm-config--server-url";
+
+class ConfigService {
+  getServerUrlAndDomainNameOrFail() {
+    const domain = localStorage.getItem(LOCAL_STORAGE_KEY__DOMAIN);
+    const serverUrl = localStorage.getItem(LOCAL_STORAGE_KEY__SERVER_URL);
+
+    if (!domain || !serverUrl) {
+      (async () => {
+        await dialogService.alert("Critical Error", "Your login session has been corrupted. Please Login Again.");
+        await authService.logout();
+        await sleep(100);
+        // @ts-ignore
+        window.location.reload(true);
+      })();
+
+      throw new Error("CriticalError: Session Corrupted");
+    }
+    return { domain, serverUrl };
+  }
+
+  getDomainName() {
+    return localStorage.getItem(LOCAL_STORAGE_KEY__DOMAIN);
+  }
+
+  setDomainName(domainName: string) {
+    return localStorage.setItem(LOCAL_STORAGE_KEY__DOMAIN, domainName);
+  }
+
+  clearDomainName() {
+    return localStorage.removeItem(LOCAL_STORAGE_KEY__DOMAIN);
+  }
+
+  getRemoteServerUrl() {
+    const serverUrl = localStorage.getItem(LOCAL_STORAGE_KEY__SERVER_URL);
+    return serverUrl || DEFAULT_REMOTE_SERVER_URL;
+  }
+
+  setRemoteServerUrl(serverUrl: string) {
+    return localStorage.setItem(LOCAL_STORAGE_KEY__SERVER_URL, serverUrl);
+  }
+
+  clearRemoteServerUrl() {
+    return localStorage.removeItem(LOCAL_STORAGE_KEY__SERVER_URL);
+  }
+
+}
+
+export const configService = new ConfigService();
