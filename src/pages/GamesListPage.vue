@@ -59,20 +59,23 @@
 
           <template v-slot:body-cell-actions="rowWrapper">
             <q-td :props="rowWrapper">
-              <q-btn-dropdown size="sm" color="primary" label="Edit" split @click="editClicked(rowWrapper.row)">
-                <q-list>
-                  <q-item clickable v-close-popup @click="viewGameClicked(rowWrapper.row)">
-                    <q-item-section>
-                      <q-item-label>View Details</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item clickable v-close-popup @click="deleteClicked(rowWrapper.row)">
-                    <q-item-section>
-                      <q-item-label>Delete</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-btn-dropdown>
+              <div class="row q-gutter-xs">
+                <q-btn 
+                  size="sm" 
+                  color="primary" 
+                  label="View" 
+                  @click="viewGameClicked(rowWrapper.row)"
+                />
+                <q-btn-dropdown size="sm" color="primary" label="Edit" split @click="editClicked(rowWrapper.row)">
+                  <q-list>
+                    <q-item clickable v-close-popup @click="deleteClicked(rowWrapper.row)">
+                      <q-item-section>
+                        <q-item-label>Delete</q-item-label>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-btn-dropdown>
+              </div>
             </q-td>
           </template>
         </q-table>
