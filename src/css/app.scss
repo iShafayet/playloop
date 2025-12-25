@@ -1,0 +1,116 @@
+// app global css in SCSS form
+
+body {
+  background-color: antiquewhite;
+}
+
+.std-column {
+  display: flex !important;
+  flex-direction: column;
+}
+
+.std-dialog-title {
+  font-size: 20px;
+}
+
+.main-left-sidebar-drawer {
+  background-color: lightgrey;
+}
+
+.std-card {
+  min-width: 300px;
+  max-width: 900px;
+  width: calc(100% - 12px - 12px);
+  margin: 12px;
+
+  .title-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .title {
+      flex: 1;
+      font-size: 20px;
+    }
+
+    .sub-title {
+      font-size: 12px;
+    }
+  }
+}
+
+.std-table-non-morphing {
+  td:not(:last-child) {
+    text-wrap: wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .search-field {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+}
+
+.std-margin-bottom-32 {
+  margin-bottom: 32px;
+}
+
+.std-margin-top-12 {
+  margin-top: 12px;
+}
+
+.std-toggle {
+  margin-top: -12px;
+  display: flex;
+  justify-content: end;
+  width: calc(100% - 16px);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.loading-notifier {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-items: center;
+  padding: 24px;
+  padding-top: 0px;
+}
+
+.std-bottom-action-row {
+  margin-left: 24px;
+  margin-right: 24px;
+  margin-bottom: 24px;
+}
+
+.std-bottom-action-row-alt {
+  margin-left: 12px;
+  margin-right: 12px;
+  margin-bottom: 24px;
+}
+
+// Custom Scrollbar - Start
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgb(194, 194, 194);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #5e5f5f;
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #a8bbbf;
+}
+
+// Custom Scrollbar - End
