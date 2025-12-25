@@ -48,6 +48,37 @@
           </q-card>
         </div>
 
+        <!-- Untracked History -->
+        <div class="q-mb-lg" v-if="game?.untrackedHistoryList && game.untrackedHistoryList.length > 0">
+          <div class="text-h6 q-mb-md">Untracked History</div>
+          <q-card flat bordered>
+            <q-card-section>
+              <div v-for="untracked in game.untrackedHistoryList" :key="untracked.platformId" class="q-mb-md">
+                <div class="row items-center q-gutter-md">
+                  <div class="col-12 col-sm-3">
+                    <strong>{{ getPlatformName(untracked.platformId) }}</strong>
+                  </div>
+                  <div class="col-12 col-sm-3">
+                    <q-chip
+                      :label="formatStatusLabel(untracked.status)"
+                      :color="getStatusColorByStatus(untracked.status)"
+                      text-color="white"
+                      size="sm"
+                    />
+                  </div>
+                  <div class="col-12 col-sm-6" v-if="untracked.lastPlayedDate">
+                    <div class="text-body2">
+                      <q-icon name="access_time" size="16px" color="grey-6" class="q-mr-xs" />
+                      Last played: {{ formatDate(untracked.lastPlayedDate) }}
+                    </div>
+                  </div>
+                </div>
+                <q-separator v-if="untracked !== game.untrackedHistoryList[game.untrackedHistoryList.length - 1]" class="q-mt-md" />
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+
         <!-- Overall Statistics -->
         <div class="q-mb-lg">
           <div class="text-h6 q-mb-md">Overall Statistics</div>
@@ -153,7 +184,7 @@
                   </div>
                   <div class="col-12 col-sm-2">
                     <q-chip
-                      :label="status.status.replace('-', ' ')"
+                      :label="formatStatusLabel(status.status)"
                       :color="getStatusColorByStatus(status.status)"
                       text-color="white"
                       size="sm"
@@ -282,6 +313,15 @@ function formatDate(epoch: number): string {
   return prettifyDate(epoch);
 }
 
+function formatStatusLabel(status: string): string {
+  if (!status) return "Not set";
+  // Replace hyphens with spaces and capitalize each word
+  return status
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function getPlatformName(platformId: string): string {
   return platformsMap.value.get(platformId)?.name || platformId;
 }
@@ -318,7 +358,7 @@ function getSessionDuration(session: PlaySession): number {
 function getStatusLabel(platformId: string): string {
   const status = statusHistory.value.find((s) => s.platformId === platformId);
   if (!status) return "Not set";
-  return status.status.replace("-", " ");
+  return formatStatusLabel(status.status);
 }
 
 function getStatusColor(platformId: string): string {
@@ -354,7 +394,7 @@ function getUntrackedHistory(platformId: string): GameUntrackedHistoryEntry | un
 function getUntrackedHistoryLabel(platformId: string): string {
   const untracked = getUntrackedHistory(platformId);
   if (!untracked) return "None";
-  return untracked.status.replace("-", " ");
+  return formatStatusLabel(untracked.status);
 }
 
 async function loadData() {
@@ -393,8 +433,29 @@ async function loadData() {
     sessions.value = await gameService.getGameSessions(gameId);
     totalSessions.value = sessions.value.length;
     averageSessionDuration.value = await gameService.getAverageSessionDuration(gameId);
-    firstPlayedDate.value = await gameService.getFirstPlayedDate(gameId);
-    lastPlayedDate.value = await gameService.getLastPlayedDate(gameId);
+    
+    // Use sessions for dates if available, otherwise fall back to untracked history
+    if (sessions.value.length > 0) {
+      firstPlayedDate.value = await gameService.getFirstPlayedDate(gameId);
+      lastPlayedDate.value = await gameService.getLastPlayedDate(gameId);
+    } else if (game.value?.untrackedHistoryList && game.value.untrackedHistoryList.length > 0) {
+      // Use untracked history as source of truth when no sessions exist
+      const datesWithLastPlayed = game.value.untrackedHistoryList
+        .filter((u) => u.lastPlayedDate)
+        .map((u) => u.lastPlayedDate!);
+      
+      if (datesWithLastPlayed.length > 0) {
+        firstPlayedDate.value = Math.min(...datesWithLastPlayed);
+        lastPlayedDate.value = Math.max(...datesWithLastPlayed);
+      } else {
+        firstPlayedDate.value = null;
+        lastPlayedDate.value = null;
+      }
+    } else {
+      firstPlayedDate.value = null;
+      lastPlayedDate.value = null;
+    }
+    
     platformBreakdown.value = await gameService.getPlatformBreakdown(gameId);
 
     loadingIndicator.value?.startPhase({ phase: 3, weight: 30, label: "Loading history" });
