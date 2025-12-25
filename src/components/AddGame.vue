@@ -8,40 +8,44 @@
           
           <div class="q-mb-md">
             <div class="text-subtitle2 q-mb-sm">Platforms & Ownership</div>
-            <div v-for="(pair, index) in platformOwnershipPairs" :key="index" class="row q-gutter-sm q-mb-sm">
-              <q-select
-                filled
-                v-model="pair.platformId"
-                :options="getAvailablePlatforms(pair.platformId)"
-                label="Platform"
-                emit-value
-                map-options
-                option-value="_id"
-                option-label="name"
-                :loading="isLoadingPlatforms"
-                class="col"
-                :rules="[(val) => !!val || 'Platform is required']"
-              />
-              <q-select
-                filled
-                v-model="pair.ownershipType"
-                :options="ownershipTypeOptions"
-                label="Ownership"
-                emit-value
-                map-options
-                class="col"
-                :rules="[(val) => !!val || 'Ownership is required']"
-              />
-              <q-btn
-                v-if="platformOwnershipPairs.length > 1"
-                flat
-                round
-                dense
-                icon="delete"
-                color="negative"
-                @click="removePlatformPair(index)"
-                class="q-mt-sm"
-              />
+            <div v-for="(pair, index) in platformOwnershipPairs" :key="index" class="q-mb-md">
+              <q-card flat bordered class="q-pa-sm">
+                <div class="row q-gutter-sm q-mb-sm">
+                  <q-select
+                    filled
+                    v-model="pair.platformId"
+                    :options="getAvailablePlatforms(pair.platformId)"
+                    label="Platform"
+                    emit-value
+                    map-options
+                    option-value="_id"
+                    option-label="name"
+                    :loading="isLoadingPlatforms"
+                    class="col"
+                    :rules="[(val) => !!val || 'Platform is required']"
+                  />
+                  <q-select
+                    filled
+                    v-model="pair.ownershipType"
+                    :options="ownershipTypeOptions"
+                    label="Ownership"
+                    emit-value
+                    map-options
+                    class="col"
+                    :rules="[(val) => !!val || 'Ownership is required']"
+                  />
+                  <q-btn
+                    v-if="platformOwnershipPairs.length > 1"
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    color="negative"
+                    @click="removePlatformPair(index)"
+                    class="q-mt-sm"
+                  />
+                </div>
+              </q-card>
             </div>
             <q-btn
               flat
@@ -56,6 +60,48 @@
 
           <q-input filled v-model="releaseDate" type="date" label="Release Date" />
           <q-toggle v-model="isRetroGame" label="Is Retro Game" color="green" left-label />
+          
+          <q-separator class="q-my-md" />
+          
+          <q-toggle 
+            v-model="hasUntrackedHistory" 
+            label="Had untracked history before starting to track" 
+            color="primary" 
+            left-label
+          />
+          
+          <!-- Untracked History Section -->
+          <div v-if="hasUntrackedHistory" class="q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Untracked History</div>
+            <div v-for="(pair, index) in platformOwnershipPairs" :key="`untracked-${index}`" class="q-mb-sm">
+              <q-card v-if="pair.platformId" flat bordered class="q-pa-sm">
+                <div class="text-body2 q-mb-sm text-weight-medium">
+                  {{ getPlatformName(pair.platformId) }}
+                </div>
+                <div class="row q-gutter-sm">
+                  <q-select
+                    filled
+                    v-model="pair.untrackedStatus"
+                    :options="statusOptions"
+                    label="Status"
+                    emit-value
+                    map-options
+                    class="col"
+                  />
+                  <q-input
+                    filled
+                    v-model="pair.untrackedLastPlayedDate"
+                    type="date"
+                    label="Last Played Date"
+                    class="col"
+                  />
+                </div>
+              </q-card>
+            </div>
+            <div v-if="platformOwnershipPairs.filter(p => p.platformId).length === 0" class="text-body2 text-grey-6 q-pa-sm">
+              Add at least one platform above to set untracked history
+            </div>
+          </div>
         </q-form>
       </q-card-section>
 
@@ -72,7 +118,8 @@ import { QForm, useDialogPluginComponent } from "quasar";
 import { ref, onMounted, Ref } from "vue";
 import { validators } from "src/utils/validators";
 import { Collection } from "src/constants/constants";
-import { Game, GameOwnershipEntry } from "src/models/game";
+import { Game, GameOwnershipEntry, GameUntrackedHistoryEntry } from "src/models/game";
+import { GameStatus } from "src/models/game-status";
 import { Platform } from "src/models/platform";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
@@ -92,6 +139,8 @@ const { dialogRef, onDialogHide, onDialogOK, onDialogCancel } = useDialogPluginC
 type PlatformOwnershipPair = {
   platformId: string | null;
   ownershipType: GameOwnershipEntry["ownershipType"] | null;
+  untrackedStatus?: GameStatus | null;
+  untrackedLastPlayedDate?: string | null;
 };
 
 // State
@@ -105,6 +154,7 @@ const gameForm: Ref<QForm | null> = ref(null);
 const gameName: Ref<string | null> = ref(null);
 const releaseDate: Ref<string | null> = ref(null);
 const isRetroGame = ref(false);
+const hasUntrackedHistory = ref(false);
 
 const platformOptions: Ref<Platform[]> = ref([]);
 const platformOwnershipPairs: Ref<PlatformOwnershipPair[]> = ref([
@@ -119,6 +169,13 @@ const ownershipTypeOptions = [
   { label: "Other", value: "other" },
 ];
 
+const statusOptions = [
+  { label: "Completed", value: "completed" },
+  { label: "In Progress", value: "in-progress" },
+  { label: "On Hold", value: "on-hold" },
+  { label: "Dropped", value: "dropped" },
+];
+
 // Get available platforms (exclude already selected ones, except the current one)
 function getAvailablePlatforms(currentPlatformId: string | null): Platform[] {
   const selectedIds = platformOwnershipPairs.value
@@ -128,7 +185,17 @@ function getAvailablePlatforms(currentPlatformId: string | null): Platform[] {
 }
 
 function addPlatformPair() {
-  platformOwnershipPairs.value.push({ platformId: null, ownershipType: null });
+  platformOwnershipPairs.value.push({ 
+    platformId: null, 
+    ownershipType: null,
+    untrackedStatus: null,
+    untrackedLastPlayedDate: null,
+  });
+}
+
+function getPlatformName(platformId: string): string {
+  const platform = platformOptions.value.find((p) => p._id === platformId);
+  return platform?.name || platformId;
 }
 
 function removePlatformPair(index: number) {
@@ -156,17 +223,34 @@ onMounted(async () => {
 
       // Load existing ownership from game.ownershipList
       if (res.ownershipList && res.ownershipList.length > 0) {
-        platformOwnershipPairs.value = res.ownershipList.map((entry) => ({
-          platformId: entry.platformId,
-          ownershipType: entry.ownershipType,
-        }));
+        platformOwnershipPairs.value = res.ownershipList.map((entry) => {
+          const untracked = res.untrackedHistoryList?.find((u) => u.platformId === entry.platformId);
+          return {
+            platformId: entry.platformId,
+            ownershipType: entry.ownershipType,
+            untrackedStatus: untracked?.status || null,
+            untrackedLastPlayedDate: untracked?.lastPlayedDate 
+              ? new Date(untracked.lastPlayedDate).toISOString().split("T")[0]
+              : null,
+          };
+        });
       } else if (res.platformIdList && res.platformIdList.length > 0) {
         // Fallback: if no ownershipList but platformIdList exists, create pairs with "owned" as default
-        platformOwnershipPairs.value = res.platformIdList.map((platformId) => ({
-          platformId,
-          ownershipType: "owned" as GameOwnershipEntry["ownershipType"],
-        }));
+        platformOwnershipPairs.value = res.platformIdList.map((platformId) => {
+          const untracked = res.untrackedHistoryList?.find((u) => u.platformId === platformId);
+          return {
+            platformId,
+            ownershipType: "owned" as GameOwnershipEntry["ownershipType"],
+            untrackedStatus: untracked?.status || null,
+            untrackedLastPlayedDate: untracked?.lastPlayedDate 
+              ? new Date(untracked.lastPlayedDate).toISOString().split("T")[0]
+              : null,
+          };
+        });
       }
+      
+      // Set the top-level toggle based on whether any untracked history exists
+      hasUntrackedHistory.value = !!(res.untrackedHistoryList && res.untrackedHistoryList.length > 0);
     }
     isLoading.value = false;
   }
@@ -185,8 +269,9 @@ async function okClicked() {
     return;
   }
 
-  // Build ownershipList from pairs (only unique platforms, using the first occurrence)
+  // Build ownershipList and untrackedHistoryList from pairs (only unique platforms, using the first occurrence)
   const ownershipList: GameOwnershipEntry[] = [];
+  const untrackedHistoryList: GameUntrackedHistoryEntry[] = [];
   const seenPlatformIds = new Set<string>();
   const selectedPlatformIds: string[] = [];
   
@@ -198,6 +283,17 @@ async function okClicked() {
       });
       selectedPlatformIds.push(pair.platformId);
       seenPlatformIds.add(pair.platformId);
+
+      // Add untracked history if toggle is enabled and status is set
+      if (hasUntrackedHistory.value && pair.untrackedStatus) {
+        untrackedHistoryList.push({
+          platformId: pair.platformId,
+          status: pair.untrackedStatus,
+          lastPlayedDate: pair.untrackedLastPlayedDate 
+            ? new Date(pair.untrackedLastPlayedDate).getTime()
+            : undefined,
+        });
+      }
     }
   }
 
@@ -206,6 +302,7 @@ async function okClicked() {
     name: gameName.value!,
     platformIdList: selectedPlatformIds, // Keep for backward compatibility
     ownershipList: ownershipList,
+    untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
     isRetroGame: isRetroGame.value,
   };
 

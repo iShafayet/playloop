@@ -85,6 +85,7 @@
                     <th>Sessions</th>
                     <th>Status</th>
                     <th>Ownership</th>
+                    <th>Untracked History</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -101,6 +102,21 @@
                       />
                     </td>
                     <td>{{ getOwnershipLabel(platformId) }}</td>
+                    <td>
+                      <div v-if="getUntrackedHistory(platformId)">
+                        <q-chip
+                          :label="getUntrackedHistoryLabel(platformId)"
+                          :color="getStatusColorByStatus(getUntrackedHistory(platformId)?.status || '')"
+                          text-color="white"
+                          size="sm"
+                          class="q-mb-xs"
+                        />
+                        <div v-if="getUntrackedHistory(platformId)?.lastPlayedDate" class="text-caption text-grey-7">
+                          Last played: {{ formatDate(getUntrackedHistory(platformId)!.lastPlayedDate!) }}
+                        </div>
+                      </div>
+                      <span v-else class="text-grey-6">-</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -189,7 +205,7 @@ import { Game } from "src/models/game";
 import { Platform } from "src/models/platform";
 import { PlaySession } from "src/models/play-session";
 import { GameStatusHistory } from "src/models/game-status-history";
-import { GameOwnershipEntry } from "src/models/game";
+import { GameOwnershipEntry, GameUntrackedHistoryEntry } from "src/models/game";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
 import { pouchdbService } from "src/services/pouchdb-service";
@@ -287,6 +303,16 @@ function getOwnershipLabel(platformId: string): string {
   const ownership = game.value?.ownershipList?.find((o) => o.platformId === platformId);
   if (!ownership) return "Not set";
   return ownership.ownershipType;
+}
+
+function getUntrackedHistory(platformId: string): GameUntrackedHistoryEntry | undefined {
+  return game.value?.untrackedHistoryList?.find((u) => u.platformId === platformId);
+}
+
+function getUntrackedHistoryLabel(platformId: string): string {
+  const untracked = getUntrackedHistory(platformId);
+  if (!untracked) return "None";
+  return untracked.status.replace("-", " ");
 }
 
 async function loadData() {
