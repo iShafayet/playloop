@@ -20,6 +20,7 @@ export type Game = {
   ownershipList?: GameOwnershipEntry[];
   untrackedHistoryList?: GameUntrackedHistoryEntry[];
   tagIdList?: string[];
+  rating?: number | null; // 0-10, step 0.5, null = not rated
   releaseDate?: number; // epoch timestamp
   isRetroGame: boolean;
 };

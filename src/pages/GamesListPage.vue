@@ -141,6 +141,14 @@ const columns = [
     format: (val: boolean) => (val ? "Yes" : "No"),
   },
   {
+    name: "rating",
+    align: "center",
+    label: "Rating",
+    field: "rating",
+    sortable: true,
+    format: (val: number | null) => (val !== null && val !== undefined ? val.toFixed(1) : "-"),
+  },
+  {
     name: "tags",
     align: "left",
     label: "Tags",
@@ -203,6 +211,12 @@ function applyOrdering(docList: Game[], sortBy: string, descending: boolean) {
   } else if (sortBy === "isRetroGame") {
     docList.sort((a, b) => {
       return (a.isRetroGame ? 1 : 0) - (b.isRetroGame ? 1 : 0) * (descending ? -1 : 1);
+    });
+  } else if (sortBy === "rating") {
+    docList.sort((a, b) => {
+      const aRating = a.rating ?? -1; // Treat null as -1 for sorting (will appear last)
+      const bRating = b.rating ?? -1;
+      return (bRating - aRating) * (descending ? -1 : 1);
     });
   }
 }
