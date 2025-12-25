@@ -189,7 +189,7 @@ import { Game } from "src/models/game";
 import { Platform } from "src/models/platform";
 import { PlaySession } from "src/models/play-session";
 import { GameStatusHistory } from "src/models/game-status-history";
-import { GameOwnership } from "src/models/game-ownership";
+import { GameOwnershipEntry } from "src/models/game";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
 import { pouchdbService } from "src/services/pouchdb-service";
@@ -214,7 +214,7 @@ const firstPlayedDate = ref<number | null>(null);
 const lastPlayedDate = ref<number | null>(null);
 const platformBreakdown = ref(new Map<string, { playtime: number; sessionCount: number }>());
 const statusHistory = ref<GameStatusHistory[]>([]);
-const ownershipHistory = ref<GameOwnership[]>([]);
+// Ownership is now stored in game.ownershipList, no need for separate ref
 const sessions = ref<PlaySession[]>([]);
 
 const releaseDateFormatted = computed(() => {
@@ -284,7 +284,7 @@ function getStatusColorByStatus(status: string): string {
 }
 
 function getOwnershipLabel(platformId: string): string {
-  const ownership = ownershipHistory.value.find((o) => o.platformId === platformId);
+  const ownership = game.value?.ownershipList?.find((o) => o.platformId === platformId);
   if (!ownership) return "Not set";
   return ownership.ownershipType;
 }
@@ -324,9 +324,8 @@ async function loadData() {
 
     loadingIndicator.value?.startPhase({ phase: 3, weight: 30, label: "Loading history" });
 
-    // Load status and ownership history
+    // Load status history (ownership is now in game.ownershipList)
     statusHistory.value = await gameService.getGameStatusHistory(gameId);
-    ownershipHistory.value = await gameService.getGameOwnership(gameId);
   } catch (error) {
     console.error("Error loading game data:", error);
     await $q.dialog({ title: "Error", message: "Failed to load game data" });
