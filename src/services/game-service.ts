@@ -1,5 +1,6 @@
 import { Collection } from "src/constants/constants";
 import { Game } from "src/models/game";
+import { GameStatus } from "src/models/game-status";
 import { GameStatusHistory } from "src/models/game-status-history";
 // GameOwnership is no longer a separate entity - ownership is now stored in Game.ownershipList
 import { PlaySession } from "src/models/play-session";
@@ -49,7 +50,7 @@ class GameService {
     return history.length > 0 ? history[0] : null;
   }
 
-  async setGameStatus(gameId: string, platformId: string, status: GameStatusHistory["status"], notes?: string): Promise<GameStatusHistory> {
+  async setGameStatus(gameId: string, platformId: string, status: GameStatus, notes?: string): Promise<GameStatusHistory> {
     const statusHistory: GameStatusHistory = {
       $collection: Collection.GAME_STATUS_HISTORY,
       gameId,
