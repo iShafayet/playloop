@@ -143,7 +143,9 @@
         <div class="setup-section">
           <template v-if="!setupComplete">
             <div class="text-h6 q-mb-md">Setting Up Your Account</div>
-            <div class="text-body2 text-grey-7 q-mb-lg">We're creating default platforms and setting up your gaming tracking. This will only take a moment.</div>
+            <div class="text-body2 text-grey-7 q-mb-lg">
+              We're creating default platforms and setting up your gaming tracking. This will only take a moment.
+            </div>
           </template>
 
           <template v-if="setupComplete">
@@ -294,7 +296,6 @@ function clearUsernameError() {
   usernameError.value = "";
 }
 
-
 async function createAccount() {
   const validation = validateUsername(username.value);
   if (validation) {
@@ -309,9 +310,9 @@ async function createAccount() {
     await onboardingService.createOfflineUser(username.value);
     // Move to setup step
     currentStep.value = 3;
-    
+
     // Start setup process with progress tracking
-    await onboardingService.setupDefaultAccounts(undefined, (progress: OnboardingProgress) => {
+    await onboardingService.setupDefaultAccounts((progress: OnboardingProgress) => {
       progressValue.value = progress.progress;
       progressMessage.value = progress.message;
     });

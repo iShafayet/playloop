@@ -35,7 +35,7 @@ class OnboardingService {
   /**
    * Sets up default accounts and entities for offline user
    */
-  async setupDefaultAccounts(selectedCurrency?: Currency, progressCallback?: (progress: OnboardingProgress) => void): Promise<void> {
+  async setupDefaultAccounts(progressCallback?: (progress: OnboardingProgress) => void): Promise<void> {
     const steps = [
       { message: "Creating game platforms...", weight: 50 },
       { message: "Finalizing setup...", weight: 50 },
