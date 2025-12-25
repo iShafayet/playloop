@@ -60,6 +60,33 @@
 
           <q-input filled v-model="releaseDate" type="date" label="Release Date" />
           <select-tag v-model="selectedTagIds" label="Tags" />
+          
+          <div>
+            <div class="text-subtitle2 q-mb-sm">Rating</div>
+            <div class="row items-center q-gutter-sm">
+              <q-slider
+                v-model="rating"
+                :min="0"
+                :max="10"
+                :step="0.5"
+                label
+                :label-value="rating !== null ? rating.toFixed(1) : 'Not rated'"
+                label-always
+                color="primary"
+                class="col"
+              />
+              <q-btn
+                flat
+                dense
+                size="sm"
+                label="clear"
+                @click="rating = null"
+                v-if="rating !== null"
+                class="col-auto"
+              />
+            </div>
+          </div>
+          
           <q-toggle v-model="isRetroGame" label="Is Retro Game" color="green" left-label />
           
           <q-separator class="q-my-md" />
@@ -156,6 +183,7 @@ const gameForm: Ref<QForm | null> = ref(null);
 const gameName: Ref<string | null> = ref(null);
 const releaseDate: Ref<string | null> = ref(null);
 const selectedTagIds: Ref<string[]> = ref([]);
+const rating: Ref<number | null> = ref(null);
 const isRetroGame = ref(false);
 const hasUntrackedHistory = ref(false);
 
@@ -223,6 +251,7 @@ onMounted(async () => {
         releaseDate.value = date.toISOString().split("T")[0];
       }
       selectedTagIds.value = res.tagIdList || [];
+      rating.value = res.rating !== undefined ? res.rating : null;
       isRetroGame.value = res.isRetroGame || false;
 
       // Load existing ownership from game.ownershipList
@@ -308,6 +337,7 @@ async function okClicked() {
     ownershipList: ownershipList,
     untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
     tagIdList: selectedTagIds.value.length > 0 ? selectedTagIds.value : undefined,
+    rating: rating.value !== null ? rating.value : undefined,
     isRetroGame: isRetroGame.value,
   };
 

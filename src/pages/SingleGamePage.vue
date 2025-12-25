@@ -19,14 +19,15 @@
             </div>
             <div class="col-12 col-sm-6">
               <div><strong>Platforms:</strong></div>
-              <q-chip
-                v-for="platformId in game.platformIdList"
-                :key="platformId"
-                :label="getPlatformName(platformId)"
-                size="sm"
-                class="q-mr-xs q-mt-xs"
-              />
+              <q-chip v-for="platformId in game.platformIdList" :key="platformId" :label="getPlatformName(platformId)" size="sm" class="q-mr-xs q-mt-xs" />
               <span v-if="!game.platformIdList || game.platformIdList.length === 0">None</span>
+            </div>
+            <div class="col-12 col-sm-6" v-if="game.rating !== null && game.rating !== undefined">
+              <div><strong>Rating:</strong></div>
+              <div class="row items-center q-gutter-sm q-mt-xs">
+                <q-rating :model-value="game.rating" max="10" size="24px" color="primary" readonly />
+                <span class="text-h6">{{ game.rating.toFixed(1) }}/10</span>
+              </div>
             </div>
           </div>
         </div>
@@ -59,12 +60,7 @@
                     <strong>{{ getPlatformName(untracked.platformId) }}</strong>
                   </div>
                   <div class="col-12 col-sm-3">
-                    <q-chip
-                      :label="formatStatusLabel(untracked.status)"
-                      :color="getStatusColorByStatus(untracked.status)"
-                      text-color="white"
-                      size="sm"
-                    />
+                    <q-chip :label="formatStatusLabel(untracked.status)" :color="getStatusColorByStatus(untracked.status)" text-color="white" size="sm" />
                   </div>
                   <div class="col-12 col-sm-6" v-if="untracked.lastPlayedDate">
                     <div class="text-body2">
@@ -142,12 +138,7 @@
                     <td>{{ formatPlaytime(stats.playtime) }}</td>
                     <td>{{ stats.sessionCount }}</td>
                     <td>
-                      <q-chip
-                        :label="getStatusLabel(platformId)"
-                        :color="getStatusColor(platformId)"
-                        text-color="white"
-                        size="sm"
-                      />
+                      <q-chip :label="getStatusLabel(platformId)" :color="getStatusColor(platformId)" text-color="white" size="sm" />
                     </td>
                     <td>{{ getOwnershipLabel(platformId) }}</td>
                     <td>
@@ -183,12 +174,7 @@
                     <strong>{{ getPlatformName(status.platformId) }}</strong>
                   </div>
                   <div class="col-12 col-sm-2">
-                    <q-chip
-                      :label="formatStatusLabel(status.status)"
-                      :color="getStatusColorByStatus(status.status)"
-                      text-color="white"
-                      size="sm"
-                    />
+                    <q-chip :label="formatStatusLabel(status.status)" :color="getStatusColorByStatus(status.status)" text-color="white" size="sm" />
                   </div>
                   <div class="col-12 col-sm-4">
                     {{ formatDate(status.timestamp) }}
@@ -216,9 +202,7 @@
                   <div class="col-12 col-sm-3">
                     {{ formatDate(session.gamingSession?.startTime || session.transactionEpoch) }}
                   </div>
-                  <div class="col-12 col-sm-3">
-                    Duration: {{ formatPlaytime(getSessionDuration(session)) }}
-                  </div>
+                  <div class="col-12 col-sm-3">Duration: {{ formatPlaytime(getSessionDuration(session)) }}</div>
                   <div class="col-12 col-sm-3">
                     <q-btn size="sm" label="Edit" @click="editSessionClicked(session)" />
                   </div>
@@ -340,10 +324,10 @@ function getTagContrastColor(tagId: string): string {
   const r = parseInt(color.slice(1, 3), 16);
   const g = parseInt(color.slice(3, 5), 16);
   const b = parseInt(color.slice(5, 7), 16);
-  
+
   // Calculate luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
   // Return black or white based on luminance
   return luminance > 0.5 ? "#000000" : "#ffffff";
 }
@@ -433,17 +417,15 @@ async function loadData() {
     sessions.value = await gameService.getGameSessions(gameId);
     totalSessions.value = sessions.value.length;
     averageSessionDuration.value = await gameService.getAverageSessionDuration(gameId);
-    
+
     // Use sessions for dates if available, otherwise fall back to untracked history
     if (sessions.value.length > 0) {
       firstPlayedDate.value = await gameService.getFirstPlayedDate(gameId);
       lastPlayedDate.value = await gameService.getLastPlayedDate(gameId);
     } else if (game.value?.untrackedHistoryList && game.value.untrackedHistoryList.length > 0) {
       // Use untracked history as source of truth when no sessions exist
-      const datesWithLastPlayed = game.value.untrackedHistoryList
-        .filter((u) => u.lastPlayedDate)
-        .map((u) => u.lastPlayedDate!);
-      
+      const datesWithLastPlayed = game.value.untrackedHistoryList.filter((u) => u.lastPlayedDate).map((u) => u.lastPlayedDate!);
+
       if (datesWithLastPlayed.length > 0) {
         firstPlayedDate.value = Math.min(...datesWithLastPlayed);
         lastPlayedDate.value = Math.max(...datesWithLastPlayed);
@@ -455,7 +437,7 @@ async function loadData() {
       firstPlayedDate.value = null;
       lastPlayedDate.value = null;
     }
-    
+
     platformBreakdown.value = await gameService.getPlatformBreakdown(gameId);
 
     loadingIndicator.value?.startPhase({ phase: 3, weight: 30, label: "Loading history" });
@@ -528,4 +510,3 @@ onMounted(() => {
   }
 }
 </style>
-
