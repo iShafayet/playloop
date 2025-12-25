@@ -166,4 +166,4 @@ yarn-error.log*
 *.njsproj
 *.sln
 
-local/
+.local/

@@ -1,68 +1,164 @@
 <template>
   <q-page class="column items-center justify-evenly">
-    <!-- Sessions -->
     <q-card class="std-card">
-      <div class="title-row q-pa-md q-gutter-sm">
-        <div class="title">
-          <div class="month-and-year-input-wrapper" v-if="$q.screen.gt.xs">
-            <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear" @selection="monthAndYearSelected()"></month-and-year-input>
-          </div>
-        </div>
-        <q-btn color="primary" label="Add Session" @click="addSessionClicked" />
+      <!-- Header -->
+      <div class="title-row q-pa-md">
+        <div class="title">Gaming Sessions</div>
+        <q-btn color="primary" label="Add Session" icon="add" @click="addSessionClicked" />
       </div>
 
-      <div class="q-pa-md" style="padding-top: 0px; margin-top: -8px; margin-bottom: 8px">
-        <div class="month-and-year-input-wrapper" v-if="$q.screen.lt.sm">
-          <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear" @selection="monthAndYearSelected()"></month-and-year-input>
-        </div>
+      <q-separator />
 
+      <!-- Filter Section -->
+      <div class="q-pa-md">
+        <div class="row q-gutter-md items-center">
+          <div class="col-12 col-sm-auto">
+            <month-and-year-input 
+              v-model:month="filterMonth" 
+              v-model:year="filterYear" 
+              @selection="monthAndYearSelected()"
+            />
+          </div>
+          <div class="col text-right" v-if="!isLoading && cachedInferredRecordList.length > 0">
+            <q-chip color="primary" text-color="white" icon="sports_esports">
+              {{ cachedInferredRecordList.length }} session{{ cachedInferredRecordList.length !== 1 ? 's' : '' }}
+            </q-chip>
+          </div>
+        </div>
+      </div>
+
+      <q-separator />
+
+      <!-- Content -->
+      <div class="q-pa-md">
         <loading-indicator :is-loading="isLoading" :phases="4" ref="loadingIndicator"></loading-indicator>
 
-        <template v-if="!isLoading">
-          <div v-for="(playSession, index) in rows" class="record-row" v-bind:key="playSession._id">
-            <template v-if="index === 0 || prettifyDate(rows[index].transactionEpoch) !== prettifyDate(rows[index - 1].transactionEpoch)">
-              <div class="divider-line-different-day">
-                <div class="divider-line-date">
-                  <div class="divider-line-inner">{{ prettifyDate(rows[index].transactionEpoch) }}</div>
-                </div>
-              </div>
-            </template>
-            <template v-else>
-              <div class="divider-line-same-day"></div>
-            </template>
+        <!-- Empty State -->
+        <div v-if="!isLoading && rows.length === 0" class="empty-state">
+          <q-icon name="sports_esports" size="80px" color="grey-4" />
+          <div class="text-h6 q-mt-md text-grey-6">No sessions found</div>
+          <div class="text-body2 text-grey-6 q-mt-xs">Try selecting a different month or add a new session</div>
+          <q-btn 
+            color="primary" 
+            label="Add Session" 
+            icon="add" 
+            @click="addSessionClicked" 
+            class="q-mt-md"
+          />
+        </div>
 
-            <!-- Play Session -->
-            <div class="single-amount-row row" v-if="playSession.gamingSession" :data-index="index">
-              <div class="details-section">
-                <div class="record-date">
-                  {{ prettifyDate(playSession.gamingSession.startTime || playSession.transactionEpoch) }}
+        <!-- Sessions List -->
+        <template v-if="!isLoading && rows.length > 0">
+          <div v-for="(playSession, index) in rows" :key="playSession._id">
+            <!-- Date Header -->
+            <div 
+              v-if="index === 0 || prettifyDate(rows[index].transactionEpoch) !== prettifyDate(rows[index - 1].transactionEpoch)"
+              class="date-header q-mb-md q-mt-lg"
+            >
+              <div class="row items-center q-gutter-sm">
+                <q-separator class="col" />
+                <div class="text-subtitle2 text-grey-7 q-px-sm text-weight-medium">
+                  {{ prettifyDate(rows[index].transactionEpoch) }}
                 </div>
-                <div class="record-details">
-                  <div class="record-main-info">
-                    <span class="record-entity-name">{{ playSession.gamingSession.game?.name || "Unknown Game" }}</span>
-                    <span class="record-separator">on</span>
-                    <span class="record-entity-name">{{ playSession.gamingSession.platform?.name || "Unknown Platform" }}</span>
-                  </div>
-                  <div class="record-duration">
-                    Duration: {{ formatPlaytime(getSessionDuration(playSession)) }}
-                  </div>
-                  <div class="record-notes" v-if="playSession.notes">{{ playSession.notes }}</div>
-                </div>
-              </div>
-              <div class="controls">
-                <q-btn class="control-button" round color="primary" icon="create" size="8px" @click="editSessionClicked(playSession)" />
-                <q-btn class="control-button" round color="negative" icon="delete" size="8px" @click="deleteClicked(playSession)" />
+                <q-separator class="col" />
               </div>
             </div>
+
+            <!-- Session Card -->
+            <q-card 
+              v-if="playSession.gamingSession" 
+              flat 
+              bordered 
+              class="session-card q-mb-md"
+            >
+              <q-card-section>
+                <div class="row items-start q-gutter-md">
+                  <!-- Main Content -->
+                  <div class="col">
+                    <div class="row items-center q-gutter-sm q-mb-xs">
+                      <q-icon name="videogame_asset" color="primary" size="24px" />
+                      <span class="text-h6 text-weight-medium">
+                        {{ playSession.gamingSession.game?.name || "Unknown Game" }}
+                      </span>
+                    </div>
+                    
+                    <div class="row items-center q-gutter-md q-mt-sm" :class="$q.screen.lt.sm ? 'q-gutter-y-xs' : ''">
+                      <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
+                        <q-icon name="computer" size="16px" color="grey-6" />
+                        <span class="text-body2 text-grey-7">
+                          {{ playSession.gamingSession.platform?.name || "Unknown Platform" }}
+                        </span>
+                      </div>
+                      
+                      <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
+                        <q-icon name="schedule" size="16px" color="grey-6" />
+                        <span class="text-body2 text-grey-7">
+                          {{ formatPlaytime(getSessionDuration(playSession)) }}
+                        </span>
+                      </div>
+                      
+                      <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
+                        <q-icon name="access_time" size="16px" color="grey-6" />
+                        <span class="text-body2 text-grey-7">
+                          {{ formatTime(playSession.gamingSession.startTime || playSession.transactionEpoch) }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div v-if="playSession.notes" class="q-mt-sm">
+                      <q-chip 
+                        size="sm" 
+                        color="grey-2" 
+                        text-color="grey-8" 
+                        icon="note"
+                      >
+                        {{ playSession.notes }}
+                      </q-chip>
+                    </div>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="col-auto">
+                    <div class="column q-gutter-xs">
+                      <q-btn 
+                        flat 
+                        round 
+                        color="primary" 
+                        icon="edit" 
+                        size="sm"
+                        @click="editSessionClicked(playSession)"
+                        title="Edit session"
+                      />
+                      <q-btn 
+                        flat 
+                        round 
+                        color="negative" 
+                        icon="delete" 
+                        size="sm"
+                        @click="deleteClicked(playSession)"
+                        title="Delete session"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
           </div>
 
+          <!-- Pagination -->
           <div class="q-pa-lg flex flex-center">
-            <q-pagination v-model="paginationCurrentPage" :max="paginationMaxPage" input />
+            <q-pagination 
+              v-model="paginationCurrentPage" 
+              :max="paginationMaxPage" 
+              input
+              :max-pages="7"
+              direction-links
+            />
           </div>
         </template>
       </div>
     </q-card>
-    <!-- End of Sessions -->
   </q-page>
 </template>
 
@@ -111,6 +207,11 @@ function formatPlaytime(ms: number): string {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
+}
+
+function formatTime(epoch: number): string {
+  const date = new Date(epoch);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function getSessionDuration(playSession: PlaySession): number {
@@ -207,5 +308,24 @@ onMounted(() => {
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.session-card {
+  transition: box-shadow 0.2s ease;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.date-header {
+  .text-subtitle2 {
+    white-space: nowrap;
+  }
+}
+</style>
 
