@@ -2,11 +2,21 @@
   <q-page class="row items-center justify-evenly">
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
+        <q-btn color="secondary" icon="filter_list" flat round @click="setFiltersClicked" />
         <div class="title"></div>
         <q-btn color="primary" text-color="white" label="Add Game" @click="addGameClicked" />
       </div>
 
-      <div class="q-pa-md">
+      <q-separator />
+
+      <div class="q-pa-md" style="padding-top: 0px; margin-top: -8px; margin-bottom: 8px">
+        <div class="filters-activated-area" v-if="gameFilters">
+          <div style="flex: 1">
+            <span>These results are filtered.</span>
+          </div>
+          <q-btn size="sm" color="secondary" outline rounded label="Clear" @click="clearFiltersClicked" />
+        </div>
+
         <!-- @vue-expect-error -->
         <q-table
           :loading="isLoading"
@@ -99,10 +109,13 @@ import { dialogService } from "src/services/dialog-service";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
 import { tagService } from "src/services/tag-service";
+import { pouchdbService } from "src/services/pouchdb-service";
+import { Collection } from "src/constants/constants";
 import { usePaginationSizeStore } from "src/stores/pagination";
 import { ref, watch, type Ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import AddGame from "./../components/AddGame.vue";
+import FilterGamesDialog, { type GameFilters } from "./../components/FilterGamesDialog.vue";
 import { rowsPerPageOptions } from "./../constants/constants";
 
 const $q = useQuasar();
@@ -113,6 +126,9 @@ const searchFilter: Ref<string | null> = ref(null);
 const isLoading = ref(false);
 const platformsMap = ref(new Map<string, Platform>());
 const tagsMap = ref(new Map<string, Tag>());
+
+// Filter state
+const gameFilters: Ref<GameFilters | null> = ref(null);
 
 const columns = [
   {
@@ -262,6 +278,23 @@ async function loadTags() {
   });
 }
 
+function setFiltersClicked() {
+  $q.dialog({
+    component: FilterGamesDialog,
+    componentProps: {
+      inputFilters: gameFilters.value,
+    },
+  }).onOk((filters: GameFilters) => {
+    gameFilters.value = filters;
+    dataForTableRequested(null);
+  });
+}
+
+function clearFiltersClicked() {
+  gameFilters.value = null;
+  dataForTableRequested(null);
+}
+
 async function dataForTableRequested(props: any) {
   let inputPagination = props?.pagination || pagination.value;
 
@@ -274,9 +307,63 @@ async function dataForTableRequested(props: any) {
   const limit = rowsPerPage;
 
   let docList = await gameService.listGames();
+
+  // Apply search filter
   if (searchFilter.value) {
     let regex = new RegExp(`.*${searchFilter.value}.*`, "i");
     docList = docList.filter((doc) => regex.test(doc.name));
+  }
+
+  // Apply filters if they exist
+  if (gameFilters.value) {
+    // Apply platform filter
+    if (gameFilters.value.selectedPlatforms.length > 0) {
+      docList = docList.filter((game) => {
+        return game.platformIdList?.some((platformId) => gameFilters.value!.selectedPlatforms.includes(platformId));
+      });
+    }
+
+    // Apply tag filter
+    if (gameFilters.value.selectedTags.length > 0) {
+      docList = docList.filter((game) => {
+        return game.tagIdList?.some((tagId) => gameFilters.value!.selectedTags.includes(tagId));
+      });
+    }
+
+    // Apply retro filter
+    if (gameFilters.value.retroFilter !== null) {
+      const isRetro = gameFilters.value.retroFilter === "yes";
+      docList = docList.filter((game) => game.isRetroGame === isRetro);
+    }
+
+    // Apply rating filter
+    if (gameFilters.value.ratingFilter !== null) {
+      docList = docList.filter((game) => {
+        return game.rating !== null && game.rating !== undefined && game.rating >= gameFilters.value!.ratingFilter!;
+      });
+    }
+
+    // Apply completion status filter (need to load status history)
+    if (gameFilters.value.completionFilter !== null) {
+      const statusRes = await pouchdbService.listByCollection(Collection.GAME_STATUS_HISTORY);
+      const allStatusHistory = statusRes.docs as any[];
+      
+      // Get latest status for each game
+      const gameStatusMap = new Map<string, string>();
+      allStatusHistory.forEach((status) => {
+        const key = status.gameId;
+        const existing = gameStatusMap.get(key);
+        if (!existing || status.timestamp > (allStatusHistory.find((s) => s.gameId === key && s.status === existing)?.timestamp || 0)) {
+          gameStatusMap.set(key, status.status);
+        }
+      });
+
+      docList = docList.filter((game) => {
+        if (!game._id) return false;
+        const status = gameStatusMap.get(game._id);
+        return status === gameFilters.value!.completionFilter;
+      });
+    }
   }
 
   // Calculate last played date for each game
@@ -366,5 +453,16 @@ watch(searchFilter, () => {
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.filters-activated-area {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 12px;
+  color: #3d3d3d;
+  background-color: #f3f3f3;
+  padding: 8px;
+  border-radius: 4px;
+}
+</style>
 
