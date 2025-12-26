@@ -125,16 +125,17 @@ const gamingList = [
     icon: "label",
     link: "#/tags",
   },
-  {
-    title: "Pro Mode - Games",
-    caption: "Bulk edit games",
-    icon: "table_chart",
-    link: "#/pro-mode-games",
-  },
 ];
 
 const advancedList = computed(() => {
-  const list: any[] = [];
+  const list: any[] = [
+    {
+      title: "Pro Mode - Games",
+      caption: "Bulk edit games",
+      icon: "table_chart",
+      link: "#/pro-mode-games",
+    },
+  ];
   if (userStore.currentUser?.isOfflineUser) {
     list.push({
       title: "Go Online",

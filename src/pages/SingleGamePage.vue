@@ -1,24 +1,28 @@
 <template>
   <q-page class="column items-center justify-center">
     <q-card class="std-card" v-if="!isLoading && game">
-      <div class="title-row q-pa-md q-gutter-sm">
+      <div v-if="$q.screen.lt.sm" class="q-pa-md q-gutter-sm row justify-end" style="margin-bottom: 0px; padding-bottom: 0px">
+        <q-btn color="primary" label="Edit Game" @click="editGameClicked" />
+        <q-btn color="primary" label="Add Session" @click="addSessionClicked" />
+      </div>
+
+      <div class="title-row q-pa-md">
         <q-btn icon="arrow_back" flat round @click="goBack" />
         <div class="title">{{ game.name }}</div>
-        <div class="spacer"></div>
-        <q-btn color="primary" label="Edit Game" @click="editGameClicked" />
+        <div v-if="$q.screen.gt.xs" class="spacer"></div>
+        <q-btn v-if="$q.screen.gt.xs" color="primary" label="Edit Game" @click="editGameClicked" />
       </div>
+
+      <q-separator />
 
       <div class="q-pa-md">
         <!-- Game Info -->
         <div class="q-mb-lg">
-          <div class="text-h6 q-mb-md">Game Information</div>
           <div class="row q-gutter-md">
             <div class="col-12 col-sm-6">
               <div><strong>Release Date:</strong> {{ releaseDateFormatted }}</div>
               <div><strong>Retro Game:</strong> {{ game.isRetroGame ? "Yes" : "No" }}</div>
-              <div v-if="game.howLongToBeat">
-                <strong>How Long to Beat:</strong> {{ formatHowLongToBeat(game.howLongToBeat) }}
-              </div>
+              <div v-if="game.howLongToBeat"><strong>How Long to Beat:</strong> {{ formatHowLongToBeat(game.howLongToBeat) }}</div>
             </div>
             <div class="col-12 col-sm-6">
               <div><strong>Platforms:</strong></div>
@@ -122,7 +126,7 @@
         <!-- Platform Breakdown -->
         <div class="q-mb-lg" v-if="platformBreakdown.size > 0">
           <div class="text-h6 q-mb-md">Platform Breakdown</div>
-          
+
           <!-- Desktop Table View -->
           <q-card v-if="$q.screen.gt.sm" flat bordered>
             <q-card-section>
@@ -169,18 +173,14 @@
 
           <!-- Mobile Card View -->
           <div v-else class="row q-gutter-md">
-            <div 
-              v-for="[platformId, stats] in platformBreakdown" 
-              :key="platformId"
-              class="col-12"
-            >
+            <div v-for="[platformId, stats] in platformBreakdown" :key="platformId" class="col-12">
               <q-card class="platform-breakdown-card" flat bordered>
                 <q-card-section>
                   <div class="row items-center q-gutter-sm q-mb-md">
                     <q-icon name="devices" size="24px" color="primary" />
                     <div class="text-h6 text-weight-medium">{{ getPlatformName(platformId) }}</div>
                   </div>
-                  
+
                   <div class="row q-gutter-md">
                     <div class="col-6">
                       <div class="text-caption text-grey-7 q-mb-xs">Playtime</div>
@@ -243,14 +243,10 @@
                   <q-separator v-if="status !== statusHistory[statusHistory.length - 1]" class="q-mt-sm" />
                 </div>
               </div>
-              
+
               <!-- Mobile Card View -->
               <div v-else class="row q-gutter-md">
-                <div 
-                  v-for="status in statusHistory" 
-                  :key="status._id"
-                  class="col-12"
-                >
+                <div v-for="status in statusHistory" :key="status._id" class="col-12">
                   <q-card class="status-history-card" flat bordered>
                     <q-card-section>
                       <div class="row items-center q-gutter-sm q-mb-sm">
@@ -302,14 +298,10 @@
                   <q-separator v-if="session !== sessions[sessions.length - 1]" class="q-mt-sm" />
                 </div>
               </div>
-              
+
               <!-- Mobile Card View -->
               <div v-else class="row q-gutter-md">
-                <div 
-                  v-for="session in sessions" 
-                  :key="session._id"
-                  class="col-12"
-                >
+                <div v-for="session in sessions" :key="session._id" class="col-12">
                   <q-card class="session-history-card" flat bordered>
                     <q-card-section>
                       <div class="row items-center q-gutter-sm q-mb-sm">
@@ -332,14 +324,7 @@
                       </div>
                     </q-card-section>
                     <q-card-actions align="right">
-                      <q-btn 
-                        flat 
-                        color="primary" 
-                        label="Edit" 
-                        icon="edit"
-                        size="sm"
-                        @click="editSessionClicked(session)"
-                      />
+                      <q-btn flat color="primary" label="Edit" icon="edit" size="sm" @click="editSessionClicked(session)" />
                     </q-card-actions>
                   </q-card>
                 </div>
@@ -660,7 +645,7 @@ onMounted(() => {
 .session-history-card {
   border-radius: 12px;
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
