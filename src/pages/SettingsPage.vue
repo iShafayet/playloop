@@ -53,6 +53,20 @@
           />
         </div>
       </div>
+
+      <div class="q-pa-md control-group">
+        <div class="control-title" style="margin-bottom: 12px">Backup & Restore</div>
+        <div class="control-title" style="margin-bottom: 12px; font-size: 0.9em; color: #666">
+          Export your data to CSV or import from a CSV file
+        </div>
+        <q-btn
+          color="primary"
+          text-color="white"
+          label="Open Backup & Restore"
+          icon="backup"
+          @click="goToBackupRestore"
+        />
+      </div>
     </q-card>
   </q-page>
 </template>
@@ -65,9 +79,11 @@ import { usePaginationSizeStore } from "src/stores/pagination";
 import { usePlaySessionPaginationSizeStore } from "src/stores/play-session-pagination";
 import { useSettingsStore } from "src/stores/settings";
 import { validators } from "src/utils/validators";
+import { useRouter } from "vue-router";
 import { ref } from "vue";
 
 const $q = useQuasar();
+const router = useRouter();
 const playSessionPaginationStore = usePlaySessionPaginationSizeStore();
 const paginationStore = usePaginationSizeStore();
 const settingsStore = useSettingsStore();
@@ -84,6 +100,10 @@ function saveChangesClicked() {
   settingsStore.setRememberLastOpenedView(rememberLastOpenedView.value);
 
   dialogService.notify("Settings saved.", "positive");
+}
+
+function goToBackupRestore() {
+  router.push({ name: "backup-restore" });
 }
 </script>
 
