@@ -22,6 +22,7 @@ export type Review = {
   reviewText?: string | null;
   aspectRatings?: ReviewAspectRatings;
   metrics?: ReviewMetrics;
+  dateReviewed?: number | null; // epoch timestamp - when the review was written
   createdAt?: number; // epoch timestamp
   updatedAt?: number; // epoch timestamp
 };
