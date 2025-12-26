@@ -1,5 +1,5 @@
 <template>
-  <q-page class="row items-center justify-evenly">
+  <q-page class="row items-center justify-center">
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <q-btn color="secondary" icon="filter_list" flat round @click="setFiltersClicked" />
@@ -9,7 +9,7 @@
 
       <q-separator />
 
-      <div class="q-pa-md" style="padding-top: 0px; margin-top: -8px; margin-bottom: 8px">
+      <div class="q-pa-md">
         <div class="filters-activated-area" v-if="gameFilters">
           <div style="flex: 1">
             <span>These results are filtered.</span>
@@ -120,11 +120,11 @@
             <div class="text-h6 q-mt-md text-grey-6">No games found</div>
           </div>
 
-          <div v-else class="row q-gutter-md">
+          <div v-else class="mobile-cards-container">
             <div 
               v-for="game in rows" 
               :key="game._id"
-              class="col-12"
+              class="mobile-card-wrapper"
             >
               <q-card class="game-card" flat bordered>
                 <q-card-section>
@@ -584,9 +584,20 @@ watch(searchFilter, () => {
   border-radius: 4px;
 }
 
+.mobile-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobile-card-wrapper {
+  width: 100%;
+}
+
 .game-card {
   border-radius: 12px;
   transition: all 0.3s ease;
+  width: 100%;
   
   &:hover {
     transform: translateY(-2px);

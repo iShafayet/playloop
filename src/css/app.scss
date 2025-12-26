@@ -20,16 +20,18 @@ body {
 .std-card {
   min-width: 300px;
   max-width: 1200px;
-  width: calc(100% - 12px - 12px);
-  margin: 12px;
+  width: 100%;
+  margin: 12px 0;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   background-color: white;
+  overflow: hidden; // Ensure content doesn't overflow rounded corners
 
   .title-row {
     display: flex;
     flex-direction: row;
     align-items: center;
+    // Don't override q-pa-md, let it handle padding
 
     .title {
       flex: 1;
@@ -41,6 +43,19 @@ body {
     .sub-title {
       font-size: 12px;
     }
+  }
+  
+  // Ensure separators align with content
+  .q-separator {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  // Ensure content sections align properly
+  > .q-pa-md,
+  > div.q-pa-md {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
 
@@ -153,11 +168,103 @@ body {
   border-radius: 12px;
 }
 
+// Fix alignment for q-separator inside cards
+.std-card {
+  .q-separator {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  // Ensure nested cards and sections align properly
+  .q-card {
+    .q-card-section {
+      padding: 16px;
+    }
+  }
+  
+  // Ensure tables inside cards align properly
+  .q-table {
+    thead th:first-child,
+    tbody td:first-child {
+      padding-left: 16px;
+    }
+    
+    thead th:last-child,
+    tbody td:last-child {
+      padding-right: 16px;
+    }
+  }
+}
+
 // Responsive improvements
 @media (max-width: 600px) {
+  .q-page {
+    &.row {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    
+    &.column {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+  }
+  
   .std-card {
-    margin: 8px;
-    width: calc(100% - 16px);
+    margin: 8px 0;
     border-radius: 12px;
+  }
+}
+
+// Page container improvements for better alignment
+.q-page {
+  padding: 0;
+  
+  &.row {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  &.column {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+// Responsive card width and margin adjustments
+@media (min-width: 1024px) {
+  .q-page {
+    &.row {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+    
+    &.column {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+  }
+  
+  .std-card {
+    margin: 16px 0;
+  }
+}
+
+// Extra large screens - more generous spacing
+@media (min-width: 1440px) {
+  .q-page {
+    &.row {
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+    
+    &.column {
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+  }
+  
+  .std-card {
+    margin: 20px 0;
   }
 }

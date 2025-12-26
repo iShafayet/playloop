@@ -1,5 +1,5 @@
 <template>
-  <q-page class="row items-center justify-evenly">
+  <q-page class="row items-center justify-center">
     <q-card class="std-card">
       <div class="title-row q-pa-md q-gutter-sm">
         <div class="title"></div>
@@ -69,11 +69,11 @@
             <div class="text-h6 q-mt-md text-grey-6">No platforms found</div>
           </div>
 
-          <div v-else class="row q-gutter-md">
+          <div v-else class="mobile-cards-container">
             <div 
               v-for="platform in rows" 
               :key="platform._id"
-              class="col-12"
+              class="mobile-card-wrapper"
             >
               <q-card class="platform-card" flat bordered>
                 <q-card-section>
@@ -251,9 +251,20 @@ watch(searchFilter, () => {
 </script>
 
 <style scoped lang="scss">
+.mobile-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobile-card-wrapper {
+  width: 100%;
+}
+
 .platform-card {
   border-radius: 12px;
   transition: all 0.3s ease;
+  width: 100%;
   
   &:hover {
     transform: translateY(-2px);

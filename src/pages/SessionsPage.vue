@@ -1,10 +1,11 @@
 <template>
-  <q-page class="column items-center justify-evenly">
+  <q-page class="column items-center justify-center">
     <q-card class="std-card">
       <!-- Header -->
-      <div class="title-row q-pa-md">
-        <div class="title">Gaming Sessions</div>
-        <q-btn color="primary" label="Add Session" icon="add" @click="addSessionClicked" />
+      <div class="q-pa-md">
+        <div class="row items-center justify-end q-mb-md">
+          <q-btn color="primary" label="Add Session" icon="add" @click="addSessionClicked" />
+        </div>
       </div>
 
       <q-separator />

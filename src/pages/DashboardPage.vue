@@ -1,20 +1,14 @@
 <template>
-  <q-page class="row items-center justify-evenly">
-    <q-card class="std-card" style="width: 100%">
-      <div class="title-row q-pa-md">
-        <div class="title">Dashboard</div>
-      </div>
-
-      <q-separator />
-
+  <q-page class="row items-center justify-center">
+    <q-card class="std-card">
       <div class="q-pa-md">
         <loading-indicator :is-loading="isLoading" :phases="3" ref="loadingIndicator"></loading-indicator>
 
         <!-- Aggregate Statistics -->
         <div v-if="!isLoading" class="q-mb-xl">
           <div class="text-h5 q-mb-lg text-weight-medium">Overall Statistics</div>
-          <div class="row q-gutter-md">
-            <div class="col-12 col-sm-6 col-md-3">
+          <div class="row stat-cards-row">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-primary" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -27,7 +21,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-accent" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -40,7 +34,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-info" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -53,7 +47,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-secondary" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -72,8 +66,8 @@
         <!-- Completion Stats -->
         <div v-if="!isLoading" class="q-mb-xl">
           <div class="text-h5 q-mb-lg text-weight-medium">Completion Status</div>
-          <div class="row q-gutter-md">
-            <div class="col-12 col-sm-6 col-md-3">
+          <div class="row stat-cards-row">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-success" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -96,7 +90,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-info" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -119,7 +113,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-warning" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -142,7 +136,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="stat-card-col col-12 col-sm-6 col-md-3">
               <q-card class="stat-card stat-card-danger" flat>
                 <q-card-section class="stat-card-content">
                   <div class="stat-icon-wrapper">
@@ -171,8 +165,8 @@
         <!-- Quick Stats -->
         <div v-if="!isLoading" class="q-mb-xl">
           <div class="text-h5 q-mb-lg text-weight-medium">Quick Stats</div>
-          <div class="row q-gutter-md">
-            <div class="col-12 col-sm-6 col-md-4">
+          <div class="row stat-cards-row">
+            <div class="stat-card-col col-12 col-sm-6 col-md-4">
               <q-card class="quick-stat-card" flat>
                 <q-card-section>
                   <div class="row items-center q-gutter-sm q-mb-sm">
@@ -189,7 +183,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-4">
+            <div class="stat-card-col col-12 col-sm-6 col-md-4">
               <q-card class="quick-stat-card" flat>
                 <q-card-section>
                   <div class="row items-center q-gutter-sm q-mb-sm">
@@ -206,7 +200,7 @@
                 </q-card-section>
               </q-card>
             </div>
-            <div class="col-12 col-sm-6 col-md-4">
+            <div class="stat-card-col col-12 col-sm-6 col-md-4">
               <q-card class="quick-stat-card" flat>
                 <q-card-section>
                   <div class="row items-center q-gutter-sm q-mb-sm">
@@ -226,11 +220,11 @@
         <!-- Recent Activity -->
         <div v-if="!isLoading && recentGames.length > 0" class="q-mb-xl">
           <div class="text-h5 q-mb-lg text-weight-medium">Recently Played</div>
-          <div class="row q-gutter-md">
+          <div class="row stat-cards-row">
             <div 
               v-for="game in recentGames" 
               :key="game._id"
-              class="col-12 col-sm-6 col-md-4"
+              class="stat-card-col col-12 col-sm-6 col-md-4"
             >
               <q-card 
                 class="recent-game-card" 
@@ -500,10 +494,27 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+.stat-cards-row {
+  margin-left: -8px;
+  margin-right: -8px;
+  
+  .stat-card-col {
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-bottom: 16px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
 .stat-card {
   border-radius: 12px;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  height: 100%;
   
   &:hover {
     transform: translateY(-4px);
@@ -633,6 +644,8 @@ onMounted(() => {
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.08);
+  width: 100%;
+  height: 100%;
   
   &:hover {
     transform: translateY(-2px);
@@ -643,6 +656,8 @@ onMounted(() => {
 .recent-game-card {
   border-radius: 12px;
   transition: all 0.3s ease;
+  width: 100%;
+  height: 100%;
   
   &:hover {
     transform: translateY(-2px);

@@ -1,5 +1,5 @@
 <template>
-  <q-page class="column items-center justify-evenly">
+  <q-page class="column items-center justify-center">
     <q-card class="std-card" v-if="!isLoading && game">
       <div class="title-row q-pa-md q-gutter-sm">
         <q-btn icon="arrow_back" flat round @click="goBack" />
