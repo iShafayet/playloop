@@ -5,7 +5,7 @@
         <div class="std-dialog-title q-pa-md">{{ existingGameId ? "Editing a Game" : "Adding a Game" }}</div>
         <q-form class="q-gutter-md q-pa-md" ref="gameForm">
           <q-input filled v-model="gameName" label="Name of the Game" lazy-rules :rules="validators.name" />
-          
+
           <div class="q-mb-md">
             <div class="text-subtitle2 q-mb-sm">Platforms & Ownership</div>
             <div v-for="(pair, index) in platformOwnershipPairs" :key="index" class="q-mb-md">
@@ -47,18 +47,10 @@
                 </div>
               </q-card>
             </div>
-            <q-btn
-              flat
-              dense
-              label="Add another platform"
-              icon="add"
-              color="primary"
-              @click="addPlatformPair"
-              class="q-mt-sm"
-            />
+            <q-btn flat dense label="Add another platform" icon="add" color="primary" @click="addPlatformPair" class="q-mt-sm" />
           </div>
 
-          <q-input filled v-model="releaseDate" type="date" label="Release Date" />
+          <date-input v-model="releaseDate" label="Release Date" />
           <q-input
             filled
             v-model="howLongToBeat"
@@ -69,7 +61,7 @@
             hint="Average time to complete the game"
           />
           <select-tag v-model="selectedTagIds" label="Tags" />
-          
+
           <div>
             <div class="text-subtitle2 q-mb-sm">Rating</div>
             <div class="row items-center q-gutter-sm">
@@ -84,22 +76,14 @@
                 color="primary"
                 class="col"
               />
-              <q-btn
-                flat
-                dense
-                size="sm"
-                label="clear"
-                @click="rating = null"
-                v-if="rating !== null"
-                class="col-auto"
-              />
+              <q-btn flat dense size="sm" label="clear" @click="rating = null" v-if="rating !== null" class="col-auto" />
             </div>
           </div>
-          
+
           <q-toggle v-model="isRetroGame" label="Is Retro Game" color="green" left-label />
-          
+
           <q-separator class="q-my-md" />
-          
+
           <div class="q-mb-md">
             <div class="text-subtitle2 q-mb-sm">Untracked Playtime</div>
             <div class="text-body2 text-grey-7 q-mb-sm">
@@ -115,14 +99,9 @@
               hint="Enter total hours played before tracking"
             />
           </div>
-          
-          <q-toggle 
-            v-model="hasUntrackedHistory" 
-            label="Had untracked history before starting to track" 
-            color="primary" 
-            left-label
-          />
-          
+
+          <q-toggle v-model="hasUntrackedHistory" label="Had untracked history before starting to track" color="primary" left-label />
+
           <!-- Untracked History Section -->
           <div v-if="hasUntrackedHistory" class="q-mt-md">
             <div class="text-subtitle2 q-mb-sm">Untracked History</div>
@@ -132,26 +111,12 @@
                   {{ getPlatformName(pair.platformId) }}
                 </div>
                 <div class="row q-gutter-sm">
-                  <q-select
-                    filled
-                    v-model="pair.untrackedStatus"
-                    :options="statusOptions"
-                    label="Status"
-                    emit-value
-                    map-options
-                    class="col"
-                  />
-                  <q-input
-                    filled
-                    v-model="pair.untrackedLastPlayedDate"
-                    type="date"
-                    label="Last Played Date"
-                    class="col"
-                  />
+                  <q-select filled v-model="pair.untrackedStatus" :options="statusOptions" label="Status" emit-value map-options class="col" />
+                  <date-input v-model="pair.untrackedLastPlayedDate" label="Last Played Date" class="col" />
                 </div>
               </q-card>
             </div>
-            <div v-if="platformOwnershipPairs.filter(p => p.platformId).length === 0" class="text-body2 text-grey-6 q-pa-sm">
+            <div v-if="platformOwnershipPairs.filter((p) => p.platformId).length === 0" class="text-body2 text-grey-6 q-pa-sm">
               Add at least one platform above to set untracked history
             </div>
           </div>
@@ -177,6 +142,7 @@ import { Platform } from "src/models/platform";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
 import SelectTag from "./SelectTag.vue";
+import DateInput from "./lib/DateInput.vue";
 
 // Props
 const props = defineProps<{
@@ -194,7 +160,7 @@ type PlatformOwnershipPair = {
   platformId: string | null;
   ownershipType: GameOwnershipEntry["ownershipType"] | null;
   untrackedStatus?: GameStatus | null;
-  untrackedLastPlayedDate?: string | null;
+  untrackedLastPlayedDate?: number | null;
 };
 
 // State
@@ -206,7 +172,7 @@ const isLoadingPlatforms = ref(false);
 const gameForm: Ref<QForm | null> = ref(null);
 
 const gameName: Ref<string | null> = ref(null);
-const releaseDate: Ref<string | null> = ref(null);
+const releaseDate: Ref<number | null> = ref(null);
 const howLongToBeat: Ref<number | null> = ref(null);
 const selectedTagIds: Ref<string[]> = ref([]);
 const rating: Ref<number | null> = ref(null);
@@ -215,9 +181,7 @@ const untrackedPlaytimeHours: Ref<number | null> = ref(null);
 const hasUntrackedHistory = ref(false);
 
 const platformOptions: Ref<Platform[]> = ref([]);
-const platformOwnershipPairs: Ref<PlatformOwnershipPair[]> = ref([
-  { platformId: null, ownershipType: null }
-]);
+const platformOwnershipPairs: Ref<PlatformOwnershipPair[]> = ref([{ platformId: null, ownershipType: null }]);
 
 const ownershipTypeOptions = [
   { label: "Owned", value: "owned" },
@@ -236,15 +200,13 @@ const statusOptions = [
 
 // Get available platforms (exclude already selected ones, except the current one)
 function getAvailablePlatforms(currentPlatformId: string | null): Platform[] {
-  const selectedIds = platformOwnershipPairs.value
-    .map((p) => p.platformId)
-    .filter((id) => id && id !== currentPlatformId);
+  const selectedIds = platformOwnershipPairs.value.map((p) => p.platformId).filter((id) => id && id !== currentPlatformId);
   return platformOptions.value.filter((p) => p._id && !selectedIds.includes(p._id));
 }
 
 function addPlatformPair() {
-  platformOwnershipPairs.value.push({ 
-    platformId: null, 
+  platformOwnershipPairs.value.push({
+    platformId: null,
     ownershipType: null,
     untrackedStatus: null,
     untrackedLastPlayedDate: null,
@@ -274,8 +236,7 @@ onMounted(async () => {
       initialDoc = res;
       gameName.value = res.name;
       if (res.releaseDate) {
-        const date = new Date(res.releaseDate);
-        releaseDate.value = date.toISOString().split("T")[0];
+        releaseDate.value = res.releaseDate;
       }
       selectedTagIds.value = res.tagIdList || [];
       rating.value = res.rating !== undefined ? res.rating : null;
@@ -293,9 +254,7 @@ onMounted(async () => {
             platformId: entry.platformId,
             ownershipType: entry.ownershipType,
             untrackedStatus: untracked?.status || null,
-            untrackedLastPlayedDate: untracked?.lastPlayedDate 
-              ? new Date(untracked.lastPlayedDate).toISOString().split("T")[0]
-              : null,
+            untrackedLastPlayedDate: untracked?.lastPlayedDate || null,
           };
         });
       } else if (res.platformIdList && res.platformIdList.length > 0) {
@@ -306,13 +265,11 @@ onMounted(async () => {
             platformId,
             ownershipType: "owned" as GameOwnershipEntry["ownershipType"],
             untrackedStatus: untracked?.status || null,
-            untrackedLastPlayedDate: untracked?.lastPlayedDate 
-              ? new Date(untracked.lastPlayedDate).toISOString().split("T")[0]
-              : null,
+            untrackedLastPlayedDate: untracked?.lastPlayedDate || null,
           };
         });
       }
-      
+
       // Set the top-level toggle based on whether any untracked history exists
       hasUntrackedHistory.value = !!(res.untrackedHistoryList && res.untrackedHistoryList.length > 0);
     }
@@ -326,9 +283,7 @@ async function okClicked() {
   }
 
   // Validate that all pairs have both platform and ownership
-  const invalidPairs = platformOwnershipPairs.value.filter(
-    (p) => !p.platformId || !p.ownershipType
-  );
+  const invalidPairs = platformOwnershipPairs.value.filter((p) => !p.platformId || !p.ownershipType);
   if (invalidPairs.length > 0) {
     return;
   }
@@ -338,7 +293,7 @@ async function okClicked() {
   const untrackedHistoryList: GameUntrackedHistoryEntry[] = [];
   const seenPlatformIds = new Set<string>();
   const selectedPlatformIds: string[] = [];
-  
+
   for (const pair of platformOwnershipPairs.value) {
     if (pair.platformId && pair.ownershipType && !seenPlatformIds.has(pair.platformId)) {
       ownershipList.push({
@@ -353,9 +308,7 @@ async function okClicked() {
         untrackedHistoryList.push({
           platformId: pair.platformId,
           status: pair.untrackedStatus,
-          lastPlayedDate: pair.untrackedLastPlayedDate 
-            ? new Date(pair.untrackedLastPlayedDate).getTime()
-            : undefined,
+          lastPlayedDate: pair.untrackedLastPlayedDate || undefined,
         });
       }
     }
@@ -367,9 +320,10 @@ async function okClicked() {
     platformIdList: selectedPlatformIds, // Keep for backward compatibility
     ownershipList: ownershipList,
     untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
-    untrackedPlaytime: untrackedPlaytimeHours.value !== null && untrackedPlaytimeHours.value > 0
-      ? untrackedPlaytimeHours.value * 1000 * 60 * 60 // Convert hours to milliseconds
-      : undefined,
+    untrackedPlaytime:
+      untrackedPlaytimeHours.value !== null && untrackedPlaytimeHours.value > 0
+        ? untrackedPlaytimeHours.value * 1000 * 60 * 60 // Convert hours to milliseconds
+        : undefined,
     howLongToBeat: howLongToBeat.value !== null && howLongToBeat.value > 0 ? howLongToBeat.value : undefined,
     tagIdList: selectedTagIds.value.length > 0 ? selectedTagIds.value : undefined,
     rating: rating.value !== null ? rating.value : undefined,
@@ -377,7 +331,7 @@ async function okClicked() {
   };
 
   if (releaseDate.value) {
-    game.releaseDate = new Date(releaseDate.value).getTime();
+    game.releaseDate = releaseDate.value;
   }
 
   if (initialDoc) {
@@ -392,4 +346,3 @@ async function okClicked() {
 const cancelClicked = onDialogCancel;
 </script>
 <style scoped lang="scss"></style>
-
