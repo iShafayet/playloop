@@ -8,14 +8,23 @@
         <q-form class="q-gutter-md q-pa-md" ref="playSessionForm">
           <select-game v-model="playSessionGameId"></select-game>
           <select-platform v-model="playSessionPlatformId"></select-platform>
-          <q-input
-            filled
-            v-model="startTime"
-            type="datetime-local"
-            label="Start Time"
-            lazy-rules
-            :rules="validators.required"
-          />
+          <q-input filled v-model="startTime" type="datetime-local" label="Start Time" lazy-rules :rules="validators.required" />
+          <div class="row duration-inputs-row">
+            <div class="col">
+              <q-input filled v-model.number="durationHours" type="number" label="Duration (Hours)" min="0" @update:model-value="onDurationChanged" />
+            </div>
+            <div class="col">
+              <q-input
+                filled
+                v-model.number="durationMinutes"
+                type="number"
+                label="Duration (Minutes)"
+                min="0"
+                max="59"
+                @update:model-value="onDurationChanged"
+              />
+            </div>
+          </div>
           <q-input
             filled
             v-model="endTime"
@@ -23,6 +32,7 @@
             label="End Time"
             lazy-rules
             :rules="validators.required"
+            @update:model-value="onEndTimeChanged"
           />
           <q-input type="textarea" filled v-model="playSessionNotes" label="Notes" lazy-rules :rules="validators.notes" />
         </q-form>
@@ -44,7 +54,7 @@ import { PlaySession } from "src/models/play-session";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { dialogService } from "src/services/dialog-service";
 import { validators } from "src/utils/validators";
-import { ref, onMounted, Ref } from "vue";
+import { ref, onMounted, Ref, watch } from "vue";
 import SelectGame from "./SelectGame.vue";
 import SelectPlatform from "./SelectPlatform.vue";
 
@@ -70,7 +80,13 @@ const playSessionGameId: Ref<string | null> = ref(null);
 const playSessionPlatformId: Ref<string | null> = ref(null);
 const startTime: Ref<string | null> = ref(null);
 const endTime: Ref<string | null> = ref(null);
+const durationHours: Ref<number | null> = ref(0);
+const durationMinutes: Ref<number | null> = ref(0);
 const playSessionNotes: Ref<string | null> = ref("");
+
+// Flag to prevent circular updates
+let isUpdatingFromEndTime = false;
+let isUpdatingFromDuration = false;
 
 // Helper function to format datetime-local input
 function formatDateTimeLocal(epoch: number): string {
@@ -86,6 +102,81 @@ function formatDateTimeLocal(epoch: number): string {
 // Helper function to parse datetime-local input to epoch
 function parseDateTimeLocal(dateTimeString: string): number {
   return new Date(dateTimeString).getTime();
+}
+
+// Calculate duration from start and end times
+function calculateDuration() {
+  if (!startTime.value || !endTime.value) {
+    durationHours.value = 0;
+    durationMinutes.value = 0;
+    return;
+  }
+
+  const startEpoch = parseDateTimeLocal(startTime.value);
+  const endEpoch = parseDateTimeLocal(endTime.value);
+  const durationMs = endEpoch - startEpoch;
+
+  if (durationMs <= 0) {
+    durationHours.value = 0;
+    durationMinutes.value = 0;
+    return;
+  }
+
+  const totalMinutes = Math.floor(durationMs / (1000 * 60));
+  durationHours.value = Math.floor(totalMinutes / 60);
+  durationMinutes.value = totalMinutes % 60;
+}
+
+// Update end time based on duration
+function updateEndTimeFromDuration() {
+  if (!startTime.value || durationHours.value === null || durationMinutes.value === null) {
+    return;
+  }
+
+  const startEpoch = parseDateTimeLocal(startTime.value);
+  const totalMinutes = (durationHours.value || 0) * 60 + (durationMinutes.value || 0);
+  const durationMs = totalMinutes * 60 * 1000;
+  const newEndEpoch = startEpoch + durationMs;
+  endTime.value = formatDateTimeLocal(newEndEpoch);
+}
+
+// Handler for end time changes
+function onEndTimeChanged() {
+  if (isUpdatingFromDuration) {
+    return;
+  }
+  isUpdatingFromEndTime = true;
+  calculateDuration();
+  isUpdatingFromEndTime = false;
+}
+
+// Handler for duration changes
+function onDurationChanged() {
+  if (isUpdatingFromEndTime || !startTime.value) {
+    return;
+  }
+
+  // Ensure values are valid numbers
+  if (durationHours.value === null || durationHours.value === undefined) {
+    durationHours.value = 0;
+  }
+  if (durationMinutes.value === null || durationMinutes.value === undefined) {
+    durationMinutes.value = 0;
+  }
+
+  // Clamp minutes to 0-59
+  if (durationMinutes.value < 0) {
+    durationMinutes.value = 0;
+  }
+  if (durationMinutes.value > 59) {
+    const extraHours = Math.floor(durationMinutes.value / 60);
+    durationHours.value = (durationHours.value || 0) + extraHours;
+    durationMinutes.value = durationMinutes.value % 60;
+  }
+
+  isUpdatingFromDuration = true;
+  updateEndTimeFromDuration();
+  isUpdatingFromDuration = false;
 }
 
 // Load existing play session if editing
@@ -106,11 +197,24 @@ onMounted(async () => {
     }
     playSessionNotes.value = res.notes || "";
     isLoading.value = false;
+    // Calculate initial duration
+    calculateDuration();
   } else {
     // Set default times to now
     const now = new Date();
     startTime.value = formatDateTimeLocal(now.getTime());
-    endTime.value = formatDateTimeLocal(now.getTime());
+    // Set default duration to 1 hour
+    durationHours.value = 1;
+    durationMinutes.value = 0;
+    // Calculate end time from start time + duration
+    updateEndTimeFromDuration();
+  }
+});
+
+// Watch start time to recalculate duration
+watch(startTime, () => {
+  if (!isUpdatingFromDuration) {
+    calculateDuration();
   }
 });
 
@@ -153,5 +257,16 @@ async function okClicked() {
   onDialogOK();
 }
 </script>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.duration-inputs-row {
+  margin-left: 16px;
+  margin-right: 0;
+  gap: 16px;
+  margin-bottom: 32px;
 
+  > .col {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+</style>
