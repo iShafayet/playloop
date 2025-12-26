@@ -144,6 +144,8 @@ class BackupRestoreService {
       "ReleaseDate",
       "IsRetroGame",
       "Tags",
+      "TotalPlaytimeHours",
+      "LastPlayedDate",
     ];
 
     // Add variadic platform columns
@@ -152,15 +154,29 @@ class BackupRestoreService {
     }
 
     // Export games
-    const gameRows: CsvRow[] = games.map((game) => {
-      // Initialize row with all columns (core + all platform columns)
-      const row: CsvRow = {
-        Name: (game.name || "").trim(),
-        Rating: game.rating !== null && game.rating !== undefined ? String(game.rating) : "",
-        ReleaseDate: game.releaseDate ? new Date(game.releaseDate).toISOString().split("T")[0] : "",
-        IsRetroGame: game.isRetroGame ? "Yes" : "No",
-        Tags: "",
-      };
+    const gameRows: CsvRow[] = await Promise.all(
+      games.map(async (game) => {
+        // Initialize row with all columns (core + all platform columns)
+        const row: CsvRow = {
+          Name: (game.name || "").trim(),
+          Rating: game.rating !== null && game.rating !== undefined ? String(game.rating) : "",
+          ReleaseDate: game.releaseDate ? new Date(game.releaseDate).toISOString().split("T")[0] : "",
+          IsRetroGame: game.isRetroGame ? "Yes" : "No",
+          Tags: "",
+          TotalPlaytimeHours: "",
+          LastPlayedDate: "",
+        };
+
+        // Calculate total playtime: untracked + session playtime
+        const untrackedPlaytimeMs = game.untrackedPlaytime || 0;
+        const sessionPlaytimeMs = await gameService.getTotalPlaytime(game._id!);
+        const totalPlaytimeMs = untrackedPlaytimeMs + sessionPlaytimeMs;
+        const totalPlaytimeHours = totalPlaytimeMs / (1000 * 60 * 60);
+        row.TotalPlaytimeHours = totalPlaytimeHours > 0 ? totalPlaytimeHours.toFixed(2) : "";
+
+        // Get last played date from sessions
+        const lastPlayedDate = await gameService.getLastPlayedDate(game._id!);
+        row.LastPlayedDate = lastPlayedDate ? new Date(lastPlayedDate).toISOString().split("T")[0] : "";
 
       // Initialize all platform columns to empty strings
       for (let i = 1; i <= maxPlatforms; i++) {
@@ -224,8 +240,9 @@ class BackupRestoreService {
           : "";
       });
 
-      return row;
-    });
+        return row;
+      })
+    );
 
     // Sort rows by Name
     gameRows.sort((a, b) => {
@@ -408,6 +425,28 @@ class BackupRestoreService {
     const isRetroGameStr = (row.IsRetroGame || "").trim().toLowerCase();
     const isRetroGame = isRetroGameStr === "yes" || isRetroGameStr === "true" || isRetroGameStr === "1";
 
+    // Parse total playtime and last played date (for setting untracked playtime baseline)
+    let untrackedPlaytime: number | undefined;
+    const totalPlaytimeHoursStr = (row.TotalPlaytimeHours || "").trim();
+    if (totalPlaytimeHoursStr) {
+      const totalPlaytimeHours = parseFloat(totalPlaytimeHoursStr);
+      if (!isNaN(totalPlaytimeHours) && totalPlaytimeHours > 0) {
+        // When importing, the total playtime becomes the baseline untracked playtime
+        // (since we don't import sessions, all playtime is "untracked")
+        untrackedPlaytime = totalPlaytimeHours * 1000 * 60 * 60; // Convert hours to milliseconds
+      }
+    }
+
+    // Parse last played date (for setting as baseline)
+    let baselineLastPlayedDate: number | undefined;
+    const lastPlayedDateStr = (row.LastPlayedDate || "").trim();
+    if (lastPlayedDateStr) {
+      const date = new Date(lastPlayedDateStr);
+      if (!isNaN(date.getTime())) {
+        baselineLastPlayedDate = date.getTime();
+      }
+    }
+
     // Parse variadic platform columns
     const ownershipList: GameOwnershipEntry[] = [];
     const untrackedHistoryList: GameUntrackedHistoryEntry[] = [];
@@ -496,6 +535,16 @@ class BackupRestoreService {
       platformIndex++;
     }
 
+    // If we have a baseline last played date but no untracked history entry, create one
+    // Use the first platform if available
+    if (baselineLastPlayedDate && untrackedHistoryList.length === 0 && platformIds.length > 0) {
+      untrackedHistoryList.push({
+        platformId: platformIds[0],
+        status: "in-progress", // Default status
+        lastPlayedDate: baselineLastPlayedDate,
+      });
+    }
+
     // Create game
     const game: Game = {
       $collection: Collection.GAME,
@@ -503,6 +552,7 @@ class BackupRestoreService {
       platformIdList: platformIds, // Keep for backward compatibility
       ownershipList: ownershipList.length > 0 ? ownershipList : undefined,
       untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
+      untrackedPlaytime: untrackedPlaytime,
       tagIdList: tagIds.length > 0 ? tagIds : undefined,
       rating: rating,
       releaseDate: releaseDate,

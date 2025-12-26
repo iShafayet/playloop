@@ -6,6 +6,19 @@
       </div>
 
       <div class="q-pa-md">
+        <q-banner class="bg-orange-1 text-orange-9 q-mb-md q-py-md" rounded>
+          <template v-slot:avatar>
+            <q-icon name="info" color="orange" />
+          </template>
+          <div class="text-body2">
+            <strong>Note:</strong> Gaming sessions are not included in the backup. Only games, platforms, and their metadata (ratings, tags, ownership, untracked playtime, and last played dates) are exported.
+            <br /><br />
+            <strong>Export behavior:</strong> Your total playtime (calculated from untracked playtime + all play sessions) is exported as a single value.
+            <br /><br />
+            <strong>Import behavior:</strong> When importing, the exported total playtime becomes the new untracked playtime baseline. This ensures your playtime statistics are preserved even though individual sessions are not.
+          </div>
+        </q-banner>
+
         <div class="section-title q-mb-md">Export Data</div>
         <div class="control-group q-pa-md q-mb-md">
           <div class="control-title q-mb-sm">
