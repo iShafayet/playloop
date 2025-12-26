@@ -17,8 +17,29 @@
           <q-btn size="sm" color="secondary" outline rounded label="Clear" @click="clearFiltersClicked" />
         </div>
 
+        <!-- Search Bar -->
+        <div class="q-mb-md">
+          <q-input 
+            outlined 
+            rounded 
+            dense 
+            clearable 
+            debounce="1" 
+            v-model="searchFilter" 
+            label="Search by name" 
+            placeholder="Search" 
+            class="search-field"
+          >
+            <template v-slot:prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
+
+        <!-- Desktop Table View -->
         <!-- @vue-expect-error -->
         <q-table
+          v-if="$q.screen.gt.xs"
           :loading="isLoading"
           title="Games"
           :rows="rows"
@@ -32,14 +53,6 @@
           @request="dataForTableRequested"
           class="std-table-non-morphing"
         >
-          <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
-              <template v-slot:prepend>
-                <q-btn icon="search" flat round @click="dataForTableRequested" />
-              </template>
-            </q-input>
-          </template>
-
           <template v-slot:body-cell-platforms="rowWrapper">
             <q-td :props="rowWrapper">
               <q-chip
@@ -95,6 +108,112 @@
             </q-td>
           </template>
         </q-table>
+
+        <!-- Mobile Card View -->
+        <div v-else>
+          <div v-if="isLoading" class="text-center q-pa-lg">
+            <q-spinner color="primary" size="3em" />
+          </div>
+          
+          <div v-else-if="rows.length === 0" class="empty-state text-center q-pa-xl">
+            <q-icon name="sports_esports" size="80px" color="grey-4" />
+            <div class="text-h6 q-mt-md text-grey-6">No games found</div>
+          </div>
+
+          <div v-else class="row q-gutter-md">
+            <div 
+              v-for="game in rows" 
+              :key="game._id"
+              class="col-12"
+            >
+              <q-card class="game-card" flat bordered>
+                <q-card-section>
+                  <div class="row items-start q-gutter-sm">
+                    <div class="col">
+                      <div class="text-h6 text-weight-medium q-mb-xs">{{ game.name }}</div>
+                      
+                      <!-- Platforms -->
+                      <div class="q-mb-sm" v-if="game.platformIdList && game.platformIdList.length > 0">
+                        <q-chip
+                          v-for="platformId in game.platformIdList"
+                          :key="platformId"
+                          :label="getPlatformName(platformId)"
+                          size="sm"
+                          color="primary"
+                          text-color="white"
+                          class="q-mr-xs q-mb-xs"
+                        />
+                      </div>
+                      <div v-else class="text-body2 text-grey-6 q-mb-sm">No platforms</div>
+
+                      <!-- Tags -->
+                      <div class="q-mb-sm" v-if="game.tagIdList && game.tagIdList.length > 0">
+                        <q-chip
+                          v-for="tagId in game.tagIdList"
+                          :key="tagId"
+                          :label="getTagName(tagId)"
+                          :style="{ backgroundColor: getTagColor(tagId), color: getTagContrastColor(tagId) }"
+                          size="sm"
+                          class="q-mr-xs q-mb-xs"
+                        />
+                      </div>
+
+                      <!-- Metadata -->
+                      <div class="row q-gutter-md text-body2 text-grey-7">
+                        <div class="row items-center q-gutter-xs">
+                          <q-icon name="access_time" size="14px" />
+                          <span>{{ game.lastPlayedDate ? new Date(game.lastPlayedDate).toLocaleDateString() : "Never" }}</span>
+                        </div>
+                        <div v-if="game.isRetroGame" class="row items-center q-gutter-xs">
+                          <q-icon name="history" size="14px" />
+                          <span>Retro</span>
+                        </div>
+                        <div v-if="game.rating !== null && game.rating !== undefined" class="row items-center q-gutter-xs">
+                          <q-icon name="star" size="14px" />
+                          <span>{{ game.rating.toFixed(1) }}/10</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </q-card-section>
+                <q-card-actions align="right">
+                  <q-btn 
+                    flat 
+                    color="primary" 
+                    label="View" 
+                    icon="visibility"
+                    @click="viewGameClicked(game)"
+                  />
+                  <q-btn 
+                    flat 
+                    color="primary" 
+                    label="Edit" 
+                    icon="edit"
+                    @click="editClicked(game)"
+                  />
+                  <q-btn 
+                    flat 
+                    color="negative" 
+                    label="Delete" 
+                    icon="delete"
+                    @click="deleteClicked(game)"
+                  />
+                </q-card-actions>
+              </q-card>
+            </div>
+          </div>
+
+          <!-- Mobile Pagination -->
+          <div class="q-pa-lg flex flex-center">
+            <q-pagination 
+              v-model="pagination.page" 
+              :max="Math.ceil(pagination.rowsNumber / pagination.rowsPerPage)" 
+              :max-pages="5"
+              direction-links
+              @update:model-value="() => dataForTableRequested({ pagination: pagination })"
+            />
+          </div>
+        </div>
       </div>
     </q-card>
   </q-page>
@@ -463,6 +582,20 @@ watch(searchFilter, () => {
   background-color: #f3f3f3;
   padding: 8px;
   border-radius: 4px;
+}
+
+.game-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.empty-state {
+  padding: 60px 20px;
 }
 </style>
 

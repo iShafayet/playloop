@@ -122,7 +122,9 @@
         <!-- Platform Breakdown -->
         <div class="q-mb-lg" v-if="platformBreakdown.size > 0">
           <div class="text-h6 q-mb-md">Platform Breakdown</div>
-          <q-card flat bordered>
+          
+          <!-- Desktop Table View -->
+          <q-card v-if="$q.screen.gt.sm" flat bordered>
             <q-card-section>
               <table class="overview-table">
                 <thead>
@@ -164,6 +166,56 @@
               </table>
             </q-card-section>
           </q-card>
+
+          <!-- Mobile Card View -->
+          <div v-else class="row q-gutter-md">
+            <div 
+              v-for="[platformId, stats] in platformBreakdown" 
+              :key="platformId"
+              class="col-12"
+            >
+              <q-card class="platform-breakdown-card" flat bordered>
+                <q-card-section>
+                  <div class="row items-center q-gutter-sm q-mb-md">
+                    <q-icon name="devices" size="24px" color="primary" />
+                    <div class="text-h6 text-weight-medium">{{ getPlatformName(platformId) }}</div>
+                  </div>
+                  
+                  <div class="row q-gutter-md">
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7 q-mb-xs">Playtime</div>
+                      <div class="text-body1 text-weight-medium">{{ formatPlaytime(stats.playtime) }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7 q-mb-xs">Sessions</div>
+                      <div class="text-body1 text-weight-medium">{{ stats.sessionCount }}</div>
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7 q-mb-xs">Status</div>
+                      <q-chip :label="getStatusLabel(platformId)" :color="getStatusColor(platformId)" text-color="white" size="sm" />
+                    </div>
+                    <div class="col-6">
+                      <div class="text-caption text-grey-7 q-mb-xs">Ownership</div>
+                      <div class="text-body2">{{ getOwnershipLabel(platformId) }}</div>
+                    </div>
+                    <div class="col-12" v-if="getUntrackedHistory(platformId)">
+                      <div class="text-caption text-grey-7 q-mb-xs">Untracked History</div>
+                      <q-chip
+                        :label="getUntrackedHistoryLabel(platformId)"
+                        :color="getStatusColorByStatus(getUntrackedHistory(platformId)?.status || '')"
+                        text-color="white"
+                        size="sm"
+                        class="q-mb-xs"
+                      />
+                      <div v-if="getUntrackedHistory(platformId)?.lastPlayedDate" class="text-caption text-grey-7">
+                        Last played: {{ formatDate(getUntrackedHistory(platformId)!.lastPlayedDate!) }}
+                      </div>
+                    </div>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
         </div>
 
         <!-- Status History -->
@@ -171,22 +223,54 @@
           <div class="text-h6 q-mb-md">Status History</div>
           <q-card flat bordered>
             <q-card-section>
-              <div v-for="status in statusHistory" :key="status._id" class="q-mb-sm">
-                <div class="row q-gutter-md">
-                  <div class="col-12 col-sm-3">
-                    <strong>{{ getPlatformName(status.platformId) }}</strong>
+              <!-- Desktop View -->
+              <div v-if="$q.screen.gt.sm">
+                <div v-for="status in statusHistory" :key="status._id" class="q-mb-sm">
+                  <div class="row q-gutter-md">
+                    <div class="col-12 col-sm-3">
+                      <strong>{{ getPlatformName(status.platformId) }}</strong>
+                    </div>
+                    <div class="col-12 col-sm-2">
+                      <q-chip :label="formatStatusLabel(status.status)" :color="getStatusColorByStatus(status.status)" text-color="white" size="sm" />
+                    </div>
+                    <div class="col-12 col-sm-4">
+                      {{ formatDate(status.timestamp) }}
+                    </div>
+                    <div class="col-12 col-sm-3" v-if="status.notes">
+                      <em>{{ status.notes }}</em>
+                    </div>
                   </div>
-                  <div class="col-12 col-sm-2">
-                    <q-chip :label="formatStatusLabel(status.status)" :color="getStatusColorByStatus(status.status)" text-color="white" size="sm" />
-                  </div>
-                  <div class="col-12 col-sm-4">
-                    {{ formatDate(status.timestamp) }}
-                  </div>
-                  <div class="col-12 col-sm-3" v-if="status.notes">
-                    <em>{{ status.notes }}</em>
-                  </div>
+                  <q-separator v-if="status !== statusHistory[statusHistory.length - 1]" class="q-mt-sm" />
                 </div>
-                <q-separator v-if="status !== statusHistory[statusHistory.length - 1]" class="q-mt-sm" />
+              </div>
+              
+              <!-- Mobile Card View -->
+              <div v-else class="row q-gutter-md">
+                <div 
+                  v-for="status in statusHistory" 
+                  :key="status._id"
+                  class="col-12"
+                >
+                  <q-card class="status-history-card" flat bordered>
+                    <q-card-section>
+                      <div class="row items-center q-gutter-sm q-mb-sm">
+                        <q-icon name="devices" size="20px" color="primary" />
+                        <div class="text-subtitle1 text-weight-medium">{{ getPlatformName(status.platformId) }}</div>
+                      </div>
+                      <div class="q-mb-sm">
+                        <q-chip :label="formatStatusLabel(status.status)" :color="getStatusColorByStatus(status.status)" text-color="white" size="sm" />
+                      </div>
+                      <div class="text-body2 text-grey-7 q-mb-xs">
+                        <q-icon name="access_time" size="14px" class="q-mr-xs" />
+                        {{ formatDate(status.timestamp) }}
+                      </div>
+                      <div v-if="status.notes" class="text-body2 text-grey-8 q-mt-sm">
+                        <q-icon name="note" size="14px" class="q-mr-xs" />
+                        {{ status.notes }}
+                      </div>
+                    </q-card-section>
+                  </q-card>
+                </div>
               </div>
             </q-card-section>
           </q-card>
@@ -197,23 +281,68 @@
           <div class="text-h6 q-mb-md">Session History</div>
           <q-card flat bordered>
             <q-card-section>
-              <div v-for="session in sessions" :key="session._id" class="q-mb-sm">
-                <div class="row q-gutter-md">
-                  <div class="col-12 col-sm-3">
-                    <strong>{{ getPlatformName(session.gamingSession?.platformId || "") }}</strong>
+              <!-- Desktop View -->
+              <div v-if="$q.screen.gt.sm">
+                <div v-for="session in sessions" :key="session._id" class="q-mb-sm">
+                  <div class="row q-gutter-md">
+                    <div class="col-12 col-sm-3">
+                      <strong>{{ getPlatformName(session.gamingSession?.platformId || "") }}</strong>
+                    </div>
+                    <div class="col-12 col-sm-3">
+                      {{ formatDate(session.gamingSession?.startTime || session.transactionEpoch) }}
+                    </div>
+                    <div class="col-12 col-sm-3">Duration: {{ formatPlaytime(getSessionDuration(session)) }}</div>
+                    <div class="col-12 col-sm-3">
+                      <q-btn size="sm" label="Edit" @click="editSessionClicked(session)" />
+                    </div>
                   </div>
-                  <div class="col-12 col-sm-3">
-                    {{ formatDate(session.gamingSession?.startTime || session.transactionEpoch) }}
+                  <div v-if="session.notes" class="q-mt-xs text-grey-7">
+                    {{ session.notes }}
                   </div>
-                  <div class="col-12 col-sm-3">Duration: {{ formatPlaytime(getSessionDuration(session)) }}</div>
-                  <div class="col-12 col-sm-3">
-                    <q-btn size="sm" label="Edit" @click="editSessionClicked(session)" />
-                  </div>
+                  <q-separator v-if="session !== sessions[sessions.length - 1]" class="q-mt-sm" />
                 </div>
-                <div v-if="session.notes" class="q-mt-xs text-grey-7">
-                  {{ session.notes }}
+              </div>
+              
+              <!-- Mobile Card View -->
+              <div v-else class="row q-gutter-md">
+                <div 
+                  v-for="session in sessions" 
+                  :key="session._id"
+                  class="col-12"
+                >
+                  <q-card class="session-history-card" flat bordered>
+                    <q-card-section>
+                      <div class="row items-center q-gutter-sm q-mb-sm">
+                        <q-icon name="play_circle" size="20px" color="primary" />
+                        <div class="text-subtitle1 text-weight-medium">{{ getPlatformName(session.gamingSession?.platformId || "") }}</div>
+                      </div>
+                      <div class="row q-gutter-md q-mb-sm">
+                        <div class="col-6">
+                          <div class="text-caption text-grey-7 q-mb-xs">Date</div>
+                          <div class="text-body2">{{ formatDate(session.gamingSession?.startTime || session.transactionEpoch) }}</div>
+                        </div>
+                        <div class="col-6">
+                          <div class="text-caption text-grey-7 q-mb-xs">Duration</div>
+                          <div class="text-body2 text-weight-medium">{{ formatPlaytime(getSessionDuration(session)) }}</div>
+                        </div>
+                      </div>
+                      <div v-if="session.notes" class="text-body2 text-grey-8 q-mt-sm">
+                        <q-icon name="note" size="14px" class="q-mr-xs" />
+                        {{ session.notes }}
+                      </div>
+                    </q-card-section>
+                    <q-card-actions align="right">
+                      <q-btn 
+                        flat 
+                        color="primary" 
+                        label="Edit" 
+                        icon="edit"
+                        size="sm"
+                        @click="editSessionClicked(session)"
+                      />
+                    </q-card-actions>
+                  </q-card>
                 </div>
-                <q-separator v-if="session !== sessions[sessions.length - 1]" class="q-mt-sm" />
               </div>
             </q-card-section>
           </q-card>
@@ -523,6 +652,18 @@ onMounted(() => {
   th {
     font-weight: bold;
     background-color: #f5f5f5;
+  }
+}
+
+.platform-breakdown-card,
+.status-history-card,
+.session-history-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   }
 }
 </style>

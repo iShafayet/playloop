@@ -11,12 +11,15 @@
         <loading-indicator :is-loading="isLoading" :phases="3" ref="loadingIndicator"></loading-indicator>
 
         <!-- Aggregate Statistics -->
-        <div v-if="!isLoading" class="q-mb-lg">
-          <div class="text-h6 q-mb-md">Overall Statistics</div>
+        <div v-if="!isLoading" class="q-mb-xl">
+          <div class="text-h5 q-mb-lg text-weight-medium">Overall Statistics</div>
           <div class="row q-gutter-md">
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-primary" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="sports_esports" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">Total Games</div>
                     <div class="stat-value">{{ totalGames }}</div>
@@ -25,8 +28,11 @@
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-accent" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="schedule" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">Total Playtime</div>
                     <div class="stat-value">{{ formatPlaytime(totalPlaytime) }}</div>
@@ -35,8 +41,11 @@
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-info" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="play_circle" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">Total Sessions</div>
                     <div class="stat-value">{{ totalSessions }}</div>
@@ -45,8 +54,11 @@
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-secondary" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="devices" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">Platforms</div>
                     <div class="stat-value">{{ totalPlatforms }}</div>
@@ -58,45 +70,97 @@
         </div>
 
         <!-- Completion Stats -->
-        <div v-if="!isLoading" class="q-mb-lg">
-          <div class="text-h6 q-mb-md">Completion Status</div>
+        <div v-if="!isLoading" class="q-mb-xl">
+          <div class="text-h5 q-mb-lg text-weight-medium">Completion Status</div>
           <div class="row q-gutter-md">
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-success" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="check_circle" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">Completed</div>
                     <div class="stat-value text-green">{{ completedGames }}</div>
+                    <div v-if="totalGames > 0" class="stat-progress">
+                      <q-linear-progress 
+                        :value="completedGames / totalGames" 
+                        color="green" 
+                        size="6px" 
+                        rounded
+                        class="q-mt-sm"
+                      />
+                      <div class="stat-progress-text">{{ Math.round((completedGames / totalGames) * 100) }}%</div>
+                    </div>
                   </div>
                 </q-card-section>
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-info" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="play_arrow" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">In Progress</div>
                     <div class="stat-value text-blue">{{ inProgressGames }}</div>
+                    <div v-if="totalGames > 0" class="stat-progress">
+                      <q-linear-progress 
+                        :value="inProgressGames / totalGames" 
+                        color="blue" 
+                        size="6px" 
+                        rounded
+                        class="q-mt-sm"
+                      />
+                      <div class="stat-progress-text">{{ Math.round((inProgressGames / totalGames) * 100) }}%</div>
+                    </div>
                   </div>
                 </q-card-section>
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-warning" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="pause_circle" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">On Hold</div>
                     <div class="stat-value text-orange">{{ onHoldGames }}</div>
+                    <div v-if="totalGames > 0" class="stat-progress">
+                      <q-linear-progress 
+                        :value="onHoldGames / totalGames" 
+                        color="orange" 
+                        size="6px" 
+                        rounded
+                        class="q-mt-sm"
+                      />
+                      <div class="stat-progress-text">{{ Math.round((onHoldGames / totalGames) * 100) }}%</div>
+                    </div>
                   </div>
                 </q-card-section>
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-3">
-              <q-card flat bordered>
-                <q-card-section>
+              <q-card class="stat-card stat-card-danger" flat>
+                <q-card-section class="stat-card-content">
+                  <div class="stat-icon-wrapper">
+                    <q-icon name="cancel" size="32px" class="stat-icon" />
+                  </div>
                   <div class="stat-item">
                     <div class="stat-label">Dropped</div>
                     <div class="stat-value text-red">{{ droppedGames }}</div>
+                    <div v-if="totalGames > 0" class="stat-progress">
+                      <q-linear-progress 
+                        :value="droppedGames / totalGames" 
+                        color="red" 
+                        size="6px" 
+                        rounded
+                        class="q-mt-sm"
+                      />
+                      <div class="stat-progress-text">{{ Math.round((droppedGames / totalGames) * 100) }}%</div>
+                    </div>
                   </div>
                 </q-card-section>
               </q-card>
@@ -105,46 +169,53 @@
         </div>
 
         <!-- Quick Stats -->
-        <div v-if="!isLoading" class="q-mb-lg">
-          <div class="text-h6 q-mb-md">Quick Stats</div>
+        <div v-if="!isLoading" class="q-mb-xl">
+          <div class="text-h5 q-mb-lg text-weight-medium">Quick Stats</div>
           <div class="row q-gutter-md">
             <div class="col-12 col-sm-6 col-md-4">
-              <q-card flat bordered>
+              <q-card class="quick-stat-card" flat>
                 <q-card-section>
-                  <div class="stat-item">
-                    <div class="stat-label">Most Played Game</div>
-                    <div class="stat-value text-body1">
-                      {{ mostPlayedGame ? mostPlayedGame.name : "N/A" }}
-                    </div>
-                    <div v-if="mostPlayedGame" class="stat-sublabel">
-                      {{ formatPlaytime(mostPlayedGame.playtime) }}
-                    </div>
+                  <div class="row items-center q-gutter-sm q-mb-sm">
+                    <q-icon name="emoji_events" size="28px" color="primary" />
+                    <div class="text-subtitle1 text-weight-medium">Most Played Game</div>
+                  </div>
+                  <div class="text-h6 text-weight-bold q-mb-xs">
+                    {{ mostPlayedGame ? mostPlayedGame.name : "N/A" }}
+                  </div>
+                  <div v-if="mostPlayedGame" class="text-body2 text-grey-7">
+                    <q-icon name="schedule" size="16px" class="q-mr-xs" />
+                    {{ formatPlaytime(mostPlayedGame.playtime) }}
                   </div>
                 </q-card-section>
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-4">
-              <q-card flat bordered>
+              <q-card class="quick-stat-card" flat>
                 <q-card-section>
-                  <div class="stat-item">
-                    <div class="stat-label">Favorite Platform</div>
-                    <div class="stat-value text-body1">
-                      {{ favoritePlatform ? favoritePlatform.name : "N/A" }}
-                    </div>
-                    <div v-if="favoritePlatform" class="stat-sublabel">
-                      {{ favoritePlatform.sessionCount }} sessions
-                    </div>
+                  <div class="row items-center q-gutter-sm q-mb-sm">
+                    <q-icon name="favorite" size="28px" color="red" />
+                    <div class="text-subtitle1 text-weight-medium">Favorite Platform</div>
+                  </div>
+                  <div class="text-h6 text-weight-bold q-mb-xs">
+                    {{ favoritePlatform ? favoritePlatform.name : "N/A" }}
+                  </div>
+                  <div v-if="favoritePlatform" class="text-body2 text-grey-7">
+                    <q-icon name="play_circle" size="16px" class="q-mr-xs" />
+                    {{ favoritePlatform.sessionCount }} sessions
                   </div>
                 </q-card-section>
               </q-card>
             </div>
             <div class="col-12 col-sm-6 col-md-4">
-              <q-card flat bordered>
+              <q-card class="quick-stat-card" flat>
                 <q-card-section>
-                  <div class="stat-item">
-                    <div class="stat-label">Retro Games</div>
-                    <div class="stat-value text-body1">{{ retroGamesCount }}</div>
-                    <div class="stat-sublabel">{{ totalGames > 0 ? Math.round((retroGamesCount / totalGames) * 100) : 0 }}% of library</div>
+                  <div class="row items-center q-gutter-sm q-mb-sm">
+                    <q-icon name="history" size="28px" color="orange" />
+                    <div class="text-subtitle1 text-weight-medium">Retro Games</div>
+                  </div>
+                  <div class="text-h4 text-weight-bold q-mb-xs">{{ retroGamesCount }}</div>
+                  <div class="text-body2 text-grey-7">
+                    {{ totalGames > 0 ? Math.round((retroGamesCount / totalGames) * 100) : 0 }}% of library
                   </div>
                 </q-card-section>
               </q-card>
@@ -153,30 +224,37 @@
         </div>
 
         <!-- Recent Activity -->
-        <div v-if="!isLoading && recentGames.length > 0" class="q-mb-lg">
-          <div class="text-h6 q-mb-md">Recently Played</div>
-          <q-list bordered separator>
-            <q-item
-              v-for="game in recentGames"
+        <div v-if="!isLoading && recentGames.length > 0" class="q-mb-xl">
+          <div class="text-h5 q-mb-lg text-weight-medium">Recently Played</div>
+          <div class="row q-gutter-md">
+            <div 
+              v-for="game in recentGames" 
               :key="game._id"
-              clickable
-              @click="viewGame(game)"
-              class="q-py-md"
+              class="col-12 col-sm-6 col-md-4"
             >
-              <q-item-section avatar>
-                <q-icon name="sports_esports" color="primary" size="32px" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>{{ game.name }}</q-item-label>
-                <q-item-label caption>
-                  Last played: {{ game.lastPlayedDate ? new Date(game.lastPlayedDate).toLocaleDateString() : "Never" }}
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-chip v-if="game.isRetroGame" color="orange" text-color="white" size="sm">Retro</q-chip>
-              </q-item-section>
-            </q-item>
-          </q-list>
+              <q-card 
+                class="recent-game-card" 
+                flat 
+                bordered
+                clickable
+                @click="viewGame(game)"
+              >
+                <q-card-section>
+                  <div class="row items-center q-gutter-sm q-mb-sm">
+                    <q-icon name="sports_esports" color="primary" size="24px" />
+                    <div class="text-subtitle1 text-weight-medium recent-game-name">{{ game.name }}</div>
+                  </div>
+                  <div class="text-body2 text-grey-7 q-mb-xs">
+                    <q-icon name="access_time" size="14px" class="q-mr-xs" />
+                    Last played: {{ game.lastPlayedDate ? new Date(game.lastPlayedDate).toLocaleDateString() : "Never" }}
+                  </div>
+                  <div v-if="game.isRetroGame" class="q-mt-sm">
+                    <q-chip color="orange" text-color="white" size="sm" icon="history">Retro</q-chip>
+                  </div>
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->
@@ -422,26 +500,161 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+.stat-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.stat-card-content {
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+
+.stat-icon {
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.1);
+}
+
 .stat-item {
   text-align: center;
 }
 
 .stat-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   margin-bottom: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .stat-value {
-  font-size: 32px;
-  font-weight: bold;
-  color: #333;
+  font-size: 36px;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.2;
 }
 
-.stat-sublabel {
-  font-size: 12px;
+.stat-progress {
+  margin-top: 12px;
+  position: relative;
+}
+
+.stat-progress-text {
+  font-size: 11px;
   color: #999;
   margin-top: 4px;
+  text-align: center;
+}
+
+// Stat card color variants
+.stat-card-primary {
+  background: linear-gradient(135deg, rgba(38, 50, 56, 0.05) 0%, rgba(38, 50, 56, 0.1) 100%);
+  border-left: 4px solid rgb(38, 50, 56);
+  
+  .stat-icon {
+    color: rgb(38, 50, 56);
+  }
+}
+
+.stat-card-accent {
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.05) 0%, rgba(156, 39, 176, 0.1) 100%);
+  border-left: 4px solid #9c27b0;
+  
+  .stat-icon {
+    color: #9c27b0;
+  }
+}
+
+.stat-card-info {
+  background: linear-gradient(135deg, rgba(49, 204, 236, 0.05) 0%, rgba(49, 204, 236, 0.1) 100%);
+  border-left: 4px solid #31ccec;
+  
+  .stat-icon {
+    color: #31ccec;
+  }
+}
+
+.stat-card-secondary {
+  background: linear-gradient(135deg, rgba(38, 166, 154, 0.05) 0%, rgba(38, 166, 154, 0.1) 100%);
+  border-left: 4px solid #26a69a;
+  
+  .stat-icon {
+    color: #26a69a;
+  }
+}
+
+.stat-card-success {
+  background: linear-gradient(135deg, rgba(33, 186, 69, 0.05) 0%, rgba(33, 186, 69, 0.1) 100%);
+  border-left: 4px solid #21ba45;
+  
+  .stat-icon {
+    color: #21ba45;
+  }
+}
+
+.stat-card-warning {
+  background: linear-gradient(135deg, rgba(242, 192, 55, 0.05) 0%, rgba(242, 192, 55, 0.1) 100%);
+  border-left: 4px solid #f2c037;
+  
+  .stat-icon {
+    color: #f2c037;
+  }
+}
+
+.stat-card-danger {
+  background: linear-gradient(135deg, rgba(193, 0, 21, 0.05) 0%, rgba(193, 0, 21, 0.1) 100%);
+  border-left: 4px solid #c10015;
+  
+  .stat-icon {
+    color: #c10015;
+  }
+}
+
+.quick-stat-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.recent-game-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: rgba(38, 50, 56, 0.3);
+  }
+}
+
+.recent-game-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .empty-state {

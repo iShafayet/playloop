@@ -60,29 +60,54 @@
                 <div class="row items-start q-gutter-md">
                   <!-- Main Content -->
                   <div class="col">
-                    <div class="row items-center q-gutter-sm q-mb-xs">
+                    <div class="row items-center q-gutter-sm q-mb-sm">
                       <q-icon name="videogame_asset" color="primary" size="24px" />
                       <span class="text-h6 text-weight-medium">
                         {{ playSession.gamingSession.game?.name || "Unknown Game" }}
                       </span>
                     </div>
 
-                    <div class="row items-center q-gutter-md q-mt-sm" :class="$q.screen.lt.sm ? 'q-gutter-y-xs' : ''">
-                      <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
+                    <!-- Desktop Layout -->
+                    <div v-if="$q.screen.gt.xs" class="row items-center q-gutter-md q-mt-sm">
+                      <div class="row items-center q-gutter-xs">
                         <q-icon name="computer" size="16px" color="grey-6" />
                         <span class="text-body2 text-grey-7">
                           {{ playSession.gamingSession.platform?.name || "Unknown Platform" }}
                         </span>
                       </div>
 
-                      <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
+                      <div class="row items-center q-gutter-xs">
                         <q-icon name="schedule" size="16px" color="grey-6" />
                         <span class="text-body2 text-grey-7">
                           {{ formatPlaytime(getSessionDuration(playSession)) }}
                         </span>
                       </div>
 
-                      <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
+                      <div class="row items-center q-gutter-xs">
+                        <q-icon name="access_time" size="16px" color="grey-6" />
+                        <span class="text-body2 text-grey-7">
+                          {{ formatTime(playSession.gamingSession.startTime || playSession.transactionEpoch) }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Mobile Layout -->
+                    <div v-else class="q-mt-sm">
+                      <div class="row items-center q-gutter-xs q-mb-xs">
+                        <q-icon name="computer" size="16px" color="grey-6" />
+                        <span class="text-body2 text-grey-7">
+                          {{ playSession.gamingSession.platform?.name || "Unknown Platform" }}
+                        </span>
+                      </div>
+
+                      <div class="row items-center q-gutter-xs q-mb-xs">
+                        <q-icon name="schedule" size="16px" color="grey-6" />
+                        <span class="text-body2 text-grey-7">
+                          {{ formatPlaytime(getSessionDuration(playSession)) }}
+                        </span>
+                      </div>
+
+                      <div class="row items-center q-gutter-xs q-mb-xs">
                         <q-icon name="access_time" size="16px" color="grey-6" />
                         <span class="text-body2 text-grey-7">
                           {{ formatTime(playSession.gamingSession.startTime || playSession.transactionEpoch) }}
@@ -100,7 +125,11 @@
 
                   <!-- Actions -->
                   <div class="col-auto">
-                    <div class="column q-gutter-xs">
+                    <div v-if="$q.screen.gt.xs" class="column q-gutter-xs">
+                      <q-btn flat round color="primary" icon="edit" size="sm" @click="editSessionClicked(playSession)" title="Edit session" />
+                      <q-btn flat round color="negative" icon="delete" size="sm" @click="deleteClicked(playSession)" title="Delete session" />
+                    </div>
+                    <div v-else class="row q-gutter-xs">
                       <q-btn flat round color="primary" icon="edit" size="sm" @click="editSessionClicked(playSession)" title="Edit session" />
                       <q-btn flat round color="negative" icon="delete" size="sm" @click="deleteClicked(playSession)" title="Delete session" />
                     </div>
@@ -273,10 +302,12 @@ onMounted(() => {
 }
 
 .session-card {
-  transition: box-shadow 0.2s ease;
+  border-radius: 12px;
+  transition: all 0.3s ease;
 
   &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   }
 }
 
