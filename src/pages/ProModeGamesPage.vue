@@ -16,7 +16,7 @@
       <!-- Spreadsheet -->
       <q-card class="std-card pro-mode-table-card">
         <!-- Header - Start -->
-        <div class="title-row q-pa-md q-gutter-sm" style="margin-bottom: -12px">
+        <div class="title-row q-pa-md q-gutter-sm">
           <q-select
             v-model="pageSize"
             :options="[25, 50, 100, 200]"

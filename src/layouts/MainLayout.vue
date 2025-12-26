@@ -185,7 +185,7 @@ const router = useRouter();
 function determineMode() {
   isDevDatabase.value = false;
   isDevMachine.value = false;
-  if (userStore.user && userStore.user.domain.indexOf("test") > -1) {
+  if (userStore.user && (userStore.user.domain.indexOf("test") > -1 || userStore.user.domain.indexOf("-sit-") > -1)) {
     isDevDatabase.value = true;
   }
 
