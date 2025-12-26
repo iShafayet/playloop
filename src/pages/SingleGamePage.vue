@@ -16,6 +16,9 @@
             <div class="col-12 col-sm-6">
               <div><strong>Release Date:</strong> {{ releaseDateFormatted }}</div>
               <div><strong>Retro Game:</strong> {{ game.isRetroGame ? "Yes" : "No" }}</div>
+              <div v-if="game.howLongToBeat">
+                <strong>How Long to Beat:</strong> {{ formatHowLongToBeat(game.howLongToBeat) }}
+              </div>
             </div>
             <div class="col-12 col-sm-6">
               <div><strong>Platforms:</strong></div>
@@ -291,6 +294,19 @@ function formatPlaytime(ms: number): string {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
+}
+
+function formatHowLongToBeat(hours: number): string {
+  const wholeHours = Math.floor(hours);
+  const minutes = Math.round((hours - wholeHours) * 60);
+  if (wholeHours > 0 && minutes > 0) {
+    return `${wholeHours}h ${minutes}m`;
+  } else if (wholeHours > 0) {
+    return `${wholeHours}h`;
+  } else if (minutes > 0) {
+    return `${minutes}m`;
+  }
+  return "0h";
 }
 
 function formatDate(epoch: number): string {

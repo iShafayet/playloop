@@ -20,6 +20,7 @@ export type Game = {
   ownershipList?: GameOwnershipEntry[];
   untrackedHistoryList?: GameUntrackedHistoryEntry[];
   untrackedPlaytime?: number; // Total playtime in milliseconds before tracking started
+  howLongToBeat?: number; // How long to beat in hours
   tagIdList?: string[];
   rating?: number | null; // 0-10, step 0.5, null = not rated
   releaseDate?: number; // epoch timestamp
