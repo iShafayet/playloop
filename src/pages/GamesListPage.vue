@@ -43,6 +43,12 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-lastPlayed="rowWrapper">
+            <q-td :props="rowWrapper">
+              {{ rowWrapper.row.lastPlayedDate ? new Date(rowWrapper.row.lastPlayedDate).toLocaleDateString() : "Never" }}
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-tags="rowWrapper">
             <q-td :props="rowWrapper">
               <q-chip
@@ -122,15 +128,15 @@ const columns = [
     align: "left",
     label: "Platforms",
     field: "platformIdList",
-    sortable: false,
+    sortable: true,
   },
   {
-    name: "releaseDate",
+    name: "lastPlayed",
     align: "left",
-    label: "Release Date",
-    field: "releaseDate",
+    label: "Last Played",
+    field: "lastPlayedDate",
     sortable: true,
-    format: (val: number) => (val ? new Date(val).toLocaleDateString() : "-"),
+    format: (val: number | null) => (val ? new Date(val).toLocaleDateString() : "Never"),
   },
   {
     name: "isRetroGame",
@@ -197,20 +203,37 @@ function getTagContrastColor(tagId: string): string {
   return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
-function applyOrdering(docList: Game[], sortBy: string, descending: boolean) {
+function getFirstPlatformName(game: Game): string {
+  if (!game.platformIdList || game.platformIdList.length === 0) {
+    return "";
+  }
+  const firstPlatformId = game.platformIdList[0];
+  return getPlatformName(firstPlatformId);
+}
+
+function applyOrdering(docList: any[], sortBy: string, descending: boolean) {
   if (sortBy === "name") {
     docList.sort((a, b) => {
       return a.name.localeCompare(b.name) * (descending ? -1 : 1);
     });
-  } else if (sortBy === "releaseDate") {
+  } else if (sortBy === "platforms") {
     docList.sort((a, b) => {
-      const aDate = a.releaseDate || 0;
-      const bDate = b.releaseDate || 0;
+      const aPlatform = getFirstPlatformName(a);
+      const bPlatform = getFirstPlatformName(b);
+      return aPlatform.localeCompare(bPlatform) * (descending ? -1 : 1);
+    });
+  } else if (sortBy === "lastPlayed") {
+    docList.sort((a, b) => {
+      const aDate = a.lastPlayedDate ?? 0;
+      const bDate = b.lastPlayedDate ?? 0;
       return (bDate - aDate) * (descending ? -1 : 1);
     });
   } else if (sortBy === "isRetroGame") {
     docList.sort((a, b) => {
-      return (a.isRetroGame ? 1 : 0) - (b.isRetroGame ? 1 : 0) * (descending ? -1 : 1);
+      const aRetro = a.isRetroGame ? 1 : 0;
+      const bRetro = b.isRetroGame ? 1 : 0;
+      const result = aRetro - bRetro;
+      return result * (descending ? -1 : 1);
     });
   } else if (sortBy === "rating") {
     docList.sort((a, b) => {
@@ -256,10 +279,37 @@ async function dataForTableRequested(props: any) {
     docList = docList.filter((doc) => regex.test(doc.name));
   }
 
-  applyOrdering(docList, sortBy, descending);
+  // Calculate last played date for each game
+  const gamesWithLastPlayed = await Promise.all(
+    docList.map(async (game) => {
+      let lastPlayedDate: number | null = null;
 
-  let totalRowCount = docList.length;
-  let currentRows = docList.slice(skip, skip + limit);
+      // Check untracked history first
+      if (game.untrackedHistoryList && game.untrackedHistoryList.length > 0) {
+        const datesWithLastPlayed = game.untrackedHistoryList
+          .filter((u) => u.lastPlayedDate)
+          .map((u) => u.lastPlayedDate!);
+        if (datesWithLastPlayed.length > 0) {
+          lastPlayedDate = Math.max(...datesWithLastPlayed);
+        }
+      }
+
+      // If no untracked history date, check sessions
+      if (!lastPlayedDate && game._id) {
+        lastPlayedDate = await gameService.getLastPlayedDate(game._id);
+      }
+
+      return {
+        ...game,
+        lastPlayedDate,
+      };
+    })
+  );
+
+  applyOrdering(gamesWithLastPlayed, sortBy, descending);
+
+  let totalRowCount = gamesWithLastPlayed.length;
+  let currentRows = gamesWithLastPlayed.slice(skip, skip + limit);
   rows.value = currentRows;
 
   pagination.value.rowsNumber = totalRowCount;
