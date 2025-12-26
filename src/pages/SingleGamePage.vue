@@ -56,6 +56,68 @@
           </q-card>
         </div>
 
+        <!-- Review -->
+        <div class="q-mb-lg">
+          <div class="row items-center q-mb-md">
+            <div class="text-h6">Review</div>
+            <div class="spacer"></div>
+            <q-btn color="primary" :label="review ? 'Edit Review' : 'Add Review'" icon="rate_review" @click="reviewClicked" />
+          </div>
+          <q-card v-if="review" flat bordered>
+            <q-card-section>
+              <!-- Review Text -->
+              <div v-if="review.reviewText" class="q-mb-md">
+                <div class="text-subtitle2 q-mb-sm">Review Text</div>
+                <div class="text-body1" style="white-space: pre-wrap">{{ review.reviewText }}</div>
+              </div>
+
+              <!-- Aspect Ratings -->
+              <div v-if="review.aspectRatings" class="q-mb-md">
+                <div class="text-subtitle2 q-mb-sm">Aspect Ratings</div>
+                <div class="row q-gutter-md">
+                  <template v-for="aspect in aspectList" :key="aspect.key">
+                    <div v-if="review.aspectRatings?.[aspect.key] !== null && review.aspectRatings?.[aspect.key] !== undefined" class="col-12 col-sm-6">
+                      <div class="row items-center q-gutter-sm">
+                        <div class="text-body2" style="min-width: 100px">{{ aspect.label }}:</div>
+                        <q-rating :model-value="review.aspectRatings![aspect.key]" :max="10" size="20px" color="primary" readonly />
+                        <span class="text-body2">{{ review.aspectRatings![aspect.key] }}/10</span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Metrics -->
+              <div v-if="review.metrics" class="q-mb-md">
+                <div class="text-subtitle2 q-mb-sm">Metrics</div>
+                <div class="row q-gutter-md">
+                  <template v-for="metric in metricList" :key="metric.key">
+                    <div v-if="review.metrics?.[metric.key] !== null && review.metrics?.[metric.key] !== undefined" class="col-12 col-sm-6">
+                      <div class="row items-center q-gutter-sm">
+                        <div class="text-body2" style="min-width: 100px">{{ metric.label }}:</div>
+                        <span class="text-body2 text-weight-medium">{{ review.metrics![metric.key] }}/10</span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Overall Rating -->
+              <div v-if="getReviewAverageRating(review) !== null" class="q-mt-md">
+                <div class="text-subtitle2 q-mb-sm">Overall Rating</div>
+                <div class="row items-center q-gutter-sm">
+                  <q-rating :model-value="getReviewAverageRating(review)" :max="10" size="28px" color="primary" readonly />
+                  <span class="text-h6">{{ getReviewAverageRating(review)!.toFixed(1) }}/10</span>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+          <div v-else class="text-center q-pa-md text-grey-6">
+            <q-icon name="rate_review" size="48px" color="grey-4" />
+            <div class="text-body2 q-mt-sm">No review yet</div>
+          </div>
+        </div>
+
         <!-- Untracked History -->
         <div class="q-mb-lg" v-if="game?.untrackedHistoryList && game.untrackedHistoryList.length > 0">
           <div class="text-h6 q-mb-md">Untracked History</div>
@@ -356,13 +418,16 @@ import { PlaySession } from "src/models/play-session";
 import { GameStatusHistory } from "src/models/game-status-history";
 import { GameOwnershipEntry, GameUntrackedHistoryEntry } from "src/models/game";
 import { Tag } from "src/models/tag";
+import { Review } from "src/models/review";
 import { gameService } from "src/services/game-service";
 import { platformService } from "src/services/platform-service";
 import { tagService } from "src/services/tag-service";
+import { reviewService } from "src/services/review-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import LoadingIndicator from "src/components/LoadingIndicator.vue";
 import AddGame from "src/components/AddGame.vue";
 import AddGamingSession from "src/components/AddGamingSession.vue";
+import AddReview from "src/components/AddReview.vue";
 import { prettifyDate } from "src/utils/misc-utils";
 
 const $q = useQuasar();
@@ -384,6 +449,7 @@ const platformBreakdown = ref(new Map<string, { playtime: number; sessionCount: 
 const statusHistory = ref<GameStatusHistory[]>([]);
 // Ownership is now stored in game.ownershipList, no need for separate ref
 const sessions = ref<PlaySession[]>([]);
+const review = ref<Review | null>(null);
 
 const releaseDateFormatted = computed(() => {
   if (!game.value?.releaseDate) return "Not set";
@@ -574,6 +640,9 @@ async function loadData() {
 
     // Load status history (ownership is now in game.ownershipList)
     statusHistory.value = await gameService.getGameStatusHistory(gameId);
+
+    // Load review
+    review.value = await reviewService.getReviewByGameId(gameId);
   } catch (error) {
     console.error("Error loading game data:", error);
     await $q.dialog({ title: "Error", message: "Failed to load game data" });
@@ -602,6 +671,40 @@ async function addSessionClicked() {
 
 async function editSessionClicked(session: PlaySession) {
   $q.dialog({ component: AddGamingSession, componentProps: { existingPlaySessionId: session._id } }).onOk(() => {
+    loadData();
+  });
+}
+
+const aspectList = [
+  { key: "story" as const, label: "Story" },
+  { key: "gameplay" as const, label: "Gameplay" },
+  { key: "novelty" as const, label: "Novelty" },
+  { key: "music" as const, label: "Music" },
+  { key: "artDesign" as const, label: "Art Design" },
+  { key: "graphics" as const, label: "Graphics" },
+  { key: "performance" as const, label: "Performance" },
+  { key: "characters" as const, label: "Characters" },
+];
+
+const metricList = [
+  { key: "difficulty" as const, label: "Difficulty" },
+  { key: "nostalgia" as const, label: "Nostalgia" },
+];
+
+function getReviewAverageRating(review: Review | null): number | null {
+  if (!review || !review.aspectRatings) return null;
+  return reviewService.calculateAverageRating(review.aspectRatings);
+}
+
+async function reviewClicked() {
+  if (!game.value || !game.value._id) return;
+  $q.dialog({
+    component: AddReview,
+    componentProps: {
+      gameId: game.value._id,
+      existingReviewId: review.value?._id || null,
+    },
+  }).onOk(() => {
     loadData();
   });
 }

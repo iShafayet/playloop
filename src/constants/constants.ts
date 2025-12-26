@@ -20,6 +20,7 @@ export const Collection = {
   PLATFORM: "platform",
   GAME_STATUS_HISTORY: "game-status-history",
   GAME_OWNERSHIP: "game-ownership",
+  REVIEW: "review",
 };
 
 export const defaultTagColor = "#444444";
