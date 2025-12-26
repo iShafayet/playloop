@@ -94,8 +94,12 @@ export const pouchdbService = {
       res = await pouchdb.post(doc);
     }
 
+    // Update doc with response _id and _rev
+    doc._id = res.id;
+    doc._rev = res.rev;
+
     this.notifyChangeListeners("upsert", doc);
-    return res;
+    return doc;
   },
 
   async listDocs() {
