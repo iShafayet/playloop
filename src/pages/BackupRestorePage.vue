@@ -99,10 +99,10 @@ async function handleFileSelected(event: Event) {
   const file = target.files?.[0];
   if (!file) return;
 
-  const answer = await dialogService.confirm(
-    "Import CSV",
-    "This will import games and platforms from the CSV file. Duplicate platforms and games (by name) will be skipped. Continue?"
-  );
+    const answer = await dialogService.confirm(
+      "Import CSV",
+      "This will import games and platforms from the CSV file. Existing games (by name) will be updated with the imported data. Duplicate platforms (by name) will be skipped. Continue?"
+    );
   if (!answer) {
     // Reset file input
     if (fileInput.value) {
@@ -129,10 +129,9 @@ async function handleFileSelected(event: Event) {
             <div style="font-weight: 600; color: #2e7d32; margin-bottom: 4px;">Games Created</div>
             <div style="font-size: 24px; color: #1b5e20; font-weight: 700;">${result.gamesCreated}</div>
           </div>
-          <div style="background: #fff3e0; padding: 12px; border-radius: 4px;">
-            <div style="font-weight: 600; color: #e65100; margin-bottom: 4px;">Games Skipped</div>
-            <div style="font-size: 24px; color: #bf360c; font-weight: 700;">${result.gamesSkipped}</div>
-            <div style="font-size: 12px; color: #666; margin-top: 4px;">(duplicates)</div>
+          <div style="background: #e3f2fd; padding: 12px; border-radius: 4px;">
+            <div style="font-weight: 600; color: #1565c0; margin-bottom: 4px;">Games Updated</div>
+            <div style="font-size: 24px; color: #0d47a1; font-weight: 700;">${result.gamesUpdated}</div>
           </div>
           <div style="background: #e8f5e9; padding: 12px; border-radius: 4px;">
             <div style="font-weight: 600; color: #2e7d32; margin-bottom: 4px;">Platforms Created</div>

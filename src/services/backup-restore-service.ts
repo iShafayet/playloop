@@ -13,7 +13,7 @@ type CsvRow = {
 
 type ImportResult = {
   gamesCreated: number;
-  gamesSkipped: number;
+  gamesUpdated: number;
   platformsCreated: number;
   platformsSkipped: number;
   errors: string[];
@@ -143,6 +143,7 @@ class BackupRestoreService {
       "Rating",
       "ReleaseDate",
       "IsRetroGame",
+      "HowLongToBeatHours",
       "Tags",
       "TotalPlaytimeHours",
     ];
@@ -161,9 +162,9 @@ class BackupRestoreService {
           Rating: game.rating !== null && game.rating !== undefined ? String(game.rating) : "",
           ReleaseDate: game.releaseDate ? new Date(game.releaseDate).toISOString().split("T")[0] : "",
           IsRetroGame: game.isRetroGame ? "Yes" : "No",
+          HowLongToBeatHours: game.howLongToBeat !== undefined && game.howLongToBeat > 0 ? String(game.howLongToBeat) : "",
           Tags: "",
           TotalPlaytimeHours: "",
-          LastPlayedDate: "",
         };
 
         // Calculate total playtime: untracked + session playtime
@@ -273,7 +274,7 @@ class BackupRestoreService {
   async importFromCsvFile(file: File): Promise<ImportResult> {
     const result: ImportResult = {
       gamesCreated: 0,
-      gamesSkipped: 0,
+      gamesUpdated: 0,
       platformsCreated: 0,
       platformsSkipped: 0,
       errors: [],
@@ -294,9 +295,11 @@ class BackupRestoreService {
       const existingTags = await tagService.listTags();
 
       // Create lookup maps (case-insensitive)
-      const existingGameNames = new Set(
-        existingGames.map((g) => (g.name || "").trim().toLowerCase())
-      );
+      const existingGamesMap = new Map<string, Game>();
+      existingGames.forEach((g) => {
+        const name = (g.name || "").trim().toLowerCase();
+        existingGamesMap.set(name, g);
+      });
       const existingPlatformNames = new Map<string, Platform>();
       existingPlatforms.forEach((p) => {
         const name = (p.name || "").trim().toLowerCase();
@@ -318,7 +321,7 @@ class BackupRestoreService {
         try {
           await this.importGame(
             row,
-            existingGameNames,
+            existingGamesMap,
             existingPlatformNames,
             platformNameToId,
             existingTagNames,
@@ -343,7 +346,7 @@ class BackupRestoreService {
    */
   private async importGame(
     row: CsvRow,
-    existingGameNames: Set<string>,
+    existingGamesMap: Map<string, Game>,
     existingPlatformNames: Map<string, Platform>,
     platformNameToId: Map<string, string>,
     existingTagNames: Map<string, Tag>,
@@ -357,11 +360,9 @@ class BackupRestoreService {
 
     const nameLower = name.toLowerCase();
 
-    // Check if game already exists
-    if (existingGameNames.has(nameLower)) {
-      result.gamesSkipped++;
-      return;
-    }
+    // Check if game already exists - if so, we'll update it instead of creating new
+    const existingGame = existingGamesMap.get(nameLower);
+    const isUpdate = !!existingGame;
 
     // Parse tags (create if they don't exist)
     const tagNames = (row.Tags || "")
@@ -419,6 +420,16 @@ class BackupRestoreService {
     // Parse isRetroGame
     const isRetroGameStr = (row.IsRetroGame || "").trim().toLowerCase();
     const isRetroGame = isRetroGameStr === "yes" || isRetroGameStr === "true" || isRetroGameStr === "1";
+
+    // Parse how long to beat
+    let howLongToBeat: number | undefined;
+    const howLongToBeatStr = (row.HowLongToBeatHours || "").trim();
+    if (howLongToBeatStr) {
+      const howLongToBeatHours = parseFloat(howLongToBeatStr);
+      if (!isNaN(howLongToBeatHours) && howLongToBeatHours > 0) {
+        howLongToBeat = howLongToBeatHours;
+      }
+    }
 
     // Parse total playtime (for setting untracked playtime baseline)
     let untrackedPlaytime: number | undefined;
@@ -520,23 +531,47 @@ class BackupRestoreService {
       platformIndex++;
     }
 
-    // Create game
-    const game: Game = {
-      $collection: Collection.GAME,
-      name: name,
-      platformIdList: platformIds, // Keep for backward compatibility
-      ownershipList: ownershipList.length > 0 ? ownershipList : undefined,
-      untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
-      untrackedPlaytime: untrackedPlaytime,
-      tagIdList: tagIds.length > 0 ? tagIds : undefined,
-      rating: rating,
-      releaseDate: releaseDate,
-      isRetroGame: isRetroGame,
-    };
+    // Create or update game
+    const game: Game = isUpdate
+      ? {
+          // Update existing game - preserve _id and _rev
+          ...existingGame!,
+          name: name,
+          platformIdList: platformIds, // Keep for backward compatibility
+          ownershipList: ownershipList.length > 0 ? ownershipList : undefined,
+          untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
+          untrackedPlaytime: untrackedPlaytime,
+          howLongToBeat: howLongToBeat,
+          tagIdList: tagIds.length > 0 ? tagIds : undefined,
+          rating: rating,
+          releaseDate: releaseDate,
+          isRetroGame: isRetroGame,
+        }
+      : {
+          // Create new game
+          $collection: Collection.GAME,
+          name: name,
+          platformIdList: platformIds, // Keep for backward compatibility
+          ownershipList: ownershipList.length > 0 ? ownershipList : undefined,
+          untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
+          untrackedPlaytime: untrackedPlaytime,
+          howLongToBeat: howLongToBeat,
+          tagIdList: tagIds.length > 0 ? tagIds : undefined,
+          rating: rating,
+          releaseDate: releaseDate,
+          isRetroGame: isRetroGame,
+        };
 
-    await gameService.saveGame(game);
-    existingGameNames.add(nameLower);
-    result.gamesCreated++;
+    const savedGame = await gameService.saveGame(game);
+    
+    // Update the map with the saved game
+    existingGamesMap.set(nameLower, savedGame);
+    
+    if (isUpdate) {
+      result.gamesUpdated++;
+    } else {
+      result.gamesCreated++;
+    }
   }
 }
 

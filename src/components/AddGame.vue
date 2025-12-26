@@ -59,6 +59,15 @@
           </div>
 
           <q-input filled v-model="releaseDate" type="date" label="Release Date" />
+          <q-input
+            filled
+            v-model="howLongToBeat"
+            type="number"
+            label="How Long to Beat (hours)"
+            :min="0"
+            :step="0.5"
+            hint="Average time to complete the game"
+          />
           <select-tag v-model="selectedTagIds" label="Tags" />
           
           <div>
@@ -198,6 +207,7 @@ const gameForm: Ref<QForm | null> = ref(null);
 
 const gameName: Ref<string | null> = ref(null);
 const releaseDate: Ref<string | null> = ref(null);
+const howLongToBeat: Ref<number | null> = ref(null);
 const selectedTagIds: Ref<string[]> = ref([]);
 const rating: Ref<number | null> = ref(null);
 const isRetroGame = ref(false);
@@ -270,6 +280,7 @@ onMounted(async () => {
       selectedTagIds.value = res.tagIdList || [];
       rating.value = res.rating !== undefined ? res.rating : null;
       isRetroGame.value = res.isRetroGame || false;
+      howLongToBeat.value = res.howLongToBeat !== undefined ? res.howLongToBeat : null;
       untrackedPlaytimeHours.value = res.untrackedPlaytime
         ? res.untrackedPlaytime / (1000 * 60 * 60) // Convert milliseconds to hours
         : null;
@@ -359,6 +370,7 @@ async function okClicked() {
     untrackedPlaytime: untrackedPlaytimeHours.value !== null && untrackedPlaytimeHours.value > 0
       ? untrackedPlaytimeHours.value * 1000 * 60 * 60 // Convert hours to milliseconds
       : undefined,
+    howLongToBeat: howLongToBeat.value !== null && howLongToBeat.value > 0 ? howLongToBeat.value : undefined,
     tagIdList: selectedTagIds.value.length > 0 ? selectedTagIds.value : undefined,
     rating: rating.value !== null ? rating.value : undefined,
     isRetroGame: isRetroGame.value,
