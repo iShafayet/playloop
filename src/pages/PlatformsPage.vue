@@ -7,8 +7,29 @@
       </div>
 
       <div class="q-pa-md">
+        <!-- Search Bar -->
+        <div class="q-mb-md">
+          <q-input 
+            outlined 
+            rounded 
+            dense 
+            clearable 
+            debounce="1" 
+            v-model="searchFilter" 
+            label="Search by name" 
+            placeholder="Search" 
+            class="search-field"
+          >
+            <template v-slot:prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
+
+        <!-- Desktop Table View -->
         <!-- @vue-expect-error -->
         <q-table
+          v-if="$q.screen.gt.xs"
           :loading="isLoading"
           title="Platforms"
           :rows="rows"
@@ -22,14 +43,6 @@
           @request="dataForTableRequested"
           class="std-table-non-morphing"
         >
-          <template v-slot:top-right>
-            <q-input outlined rounded dense clearable debounce="1" v-model="searchFilter" label="Search by name" placeholder="Search" class="search-field">
-              <template v-slot:prepend>
-                <q-btn icon="search" flat round @click="dataForTableRequested" />
-              </template>
-            </q-input>
-          </template>
-
           <template v-slot:body-cell-actions="rowWrapper">
             <q-td :props="rowWrapper">
               <q-btn-dropdown size="sm" color="primary" label="Edit" split @click="editClicked(rowWrapper.row)">
@@ -44,6 +57,68 @@
             </q-td>
           </template>
         </q-table>
+
+        <!-- Mobile Card View -->
+        <div v-else>
+          <div v-if="isLoading" class="text-center q-pa-lg">
+            <q-spinner color="primary" size="3em" />
+          </div>
+          
+          <div v-else-if="rows.length === 0" class="empty-state text-center q-pa-xl">
+            <q-icon name="devices" size="80px" color="grey-4" />
+            <div class="text-h6 q-mt-md text-grey-6">No platforms found</div>
+          </div>
+
+          <div v-else class="row q-gutter-md">
+            <div 
+              v-for="platform in rows" 
+              :key="platform._id"
+              class="col-12"
+            >
+              <q-card class="platform-card" flat bordered>
+                <q-card-section>
+                  <div class="row items-center q-gutter-sm">
+                    <q-icon name="devices" size="28px" color="primary" />
+                    <div class="col">
+                      <div class="text-h6 text-weight-medium q-mb-xs">{{ platform.name }}</div>
+                      <div v-if="platform.notes" class="text-body2 text-grey-7">
+                        {{ platform.notes }}
+                      </div>
+                      <div v-else class="text-body2 text-grey-6">No notes</div>
+                    </div>
+                  </div>
+                </q-card-section>
+                <q-card-actions align="right">
+                  <q-btn 
+                    flat 
+                    color="primary" 
+                    label="Edit" 
+                    icon="edit"
+                    @click="editClicked(platform)"
+                  />
+                  <q-btn 
+                    flat 
+                    color="negative" 
+                    label="Delete" 
+                    icon="delete"
+                    @click="deleteClicked(platform)"
+                  />
+                </q-card-actions>
+              </q-card>
+            </div>
+          </div>
+
+          <!-- Mobile Pagination -->
+          <div class="q-pa-lg flex flex-center">
+            <q-pagination 
+              v-model="pagination.page" 
+              :max="Math.ceil(pagination.rowsNumber / pagination.rowsPerPage)" 
+              :max-pages="5"
+              direction-links
+              @update:model-value="() => dataForTableRequested({ pagination: pagination })"
+            />
+          </div>
+        </div>
       </div>
     </q-card>
   </q-page>
@@ -175,5 +250,19 @@ watch(searchFilter, () => {
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.platform-card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.empty-state {
+  padding: 60px 20px;
+}
+</style>
 
