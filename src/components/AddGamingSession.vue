@@ -8,7 +8,7 @@
         <q-form class="q-gutter-md q-pa-md" ref="playSessionForm">
           <select-game v-model="playSessionGameId"></select-game>
           <select-platform v-model="playSessionPlatformId"></select-platform>
-          <q-input filled v-model="startTime" type="datetime-local" label="Start Time" lazy-rules :rules="validators.required" />
+          <date-time-input filled v-model="startTime" label="Start Time" lazy-rules :rules="validators.required" />
           <div class="row duration-inputs-row">
             <div class="col">
               <q-input filled v-model.number="durationHours" type="number" label="Duration (Hours)" min="0" @update:model-value="onDurationChanged" />
@@ -25,10 +25,9 @@
               />
             </div>
           </div>
-          <q-input
+          <date-time-input
             filled
             v-model="endTime"
-            type="datetime-local"
             label="End Time"
             lazy-rules
             :rules="validators.required"
@@ -57,6 +56,7 @@ import { validators } from "src/utils/validators";
 import { ref, onMounted, Ref, watch } from "vue";
 import SelectGame from "./SelectGame.vue";
 import SelectPlatform from "./SelectPlatform.vue";
+import DateTimeInput from "./lib/DateTimeInput.vue";
 
 // Props
 const props = defineProps<{
@@ -78,8 +78,8 @@ const playSessionForm: Ref<QForm | null> = ref(null);
 
 const playSessionGameId: Ref<string | null> = ref(null);
 const playSessionPlatformId: Ref<string | null> = ref(null);
-const startTime: Ref<string | null> = ref(null);
-const endTime: Ref<string | null> = ref(null);
+const startTime: Ref<number | null> = ref(null);
+const endTime: Ref<number | null> = ref(null);
 const durationHours: Ref<number | null> = ref(0);
 const durationMinutes: Ref<number | null> = ref(0);
 const playSessionNotes: Ref<string | null> = ref("");
@@ -88,21 +88,6 @@ const playSessionNotes: Ref<string | null> = ref("");
 let isUpdatingFromEndTime = false;
 let isUpdatingFromDuration = false;
 
-// Helper function to format datetime-local input
-function formatDateTimeLocal(epoch: number): string {
-  const date = new Date(epoch);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-// Helper function to parse datetime-local input to epoch
-function parseDateTimeLocal(dateTimeString: string): number {
-  return new Date(dateTimeString).getTime();
-}
 
 // Calculate duration from start and end times
 function calculateDuration() {
@@ -112,9 +97,7 @@ function calculateDuration() {
     return;
   }
 
-  const startEpoch = parseDateTimeLocal(startTime.value);
-  const endEpoch = parseDateTimeLocal(endTime.value);
-  const durationMs = endEpoch - startEpoch;
+  const durationMs = endTime.value - startTime.value;
 
   if (durationMs <= 0) {
     durationHours.value = 0;
@@ -133,11 +116,9 @@ function updateEndTimeFromDuration() {
     return;
   }
 
-  const startEpoch = parseDateTimeLocal(startTime.value);
   const totalMinutes = (durationHours.value || 0) * 60 + (durationMinutes.value || 0);
   const durationMs = totalMinutes * 60 * 1000;
-  const newEndEpoch = startEpoch + durationMs;
-  endTime.value = formatDateTimeLocal(newEndEpoch);
+  endTime.value = startTime.value + durationMs;
 }
 
 // Handler for end time changes
@@ -189,10 +170,10 @@ onMounted(async () => {
       playSessionGameId.value = res.gamingSession.gameId;
       playSessionPlatformId.value = res.gamingSession.platformId;
       if (res.gamingSession.startTime) {
-        startTime.value = formatDateTimeLocal(res.gamingSession.startTime);
+        startTime.value = res.gamingSession.startTime;
       }
       if (res.gamingSession.endTime) {
-        endTime.value = formatDateTimeLocal(res.gamingSession.endTime);
+        endTime.value = res.gamingSession.endTime;
       }
     }
     playSessionNotes.value = res.notes || "";
@@ -201,8 +182,7 @@ onMounted(async () => {
     calculateDuration();
   } else {
     // Set default times to now
-    const now = new Date();
-    startTime.value = formatDateTimeLocal(now.getTime());
+    startTime.value = Date.now();
     // Set default duration to 1 hour
     durationHours.value = 1;
     durationMinutes.value = 0;
@@ -227,10 +207,7 @@ async function okClicked() {
     return;
   }
 
-  const startEpoch = parseDateTimeLocal(startTime.value);
-  const endEpoch = parseDateTimeLocal(endTime.value);
-
-  if (endEpoch <= startEpoch) {
+  if (endTime.value <= startTime.value) {
     await dialogService.alert("Error", "End time must be after start time.");
     return;
   }
@@ -239,12 +216,12 @@ async function okClicked() {
     $collection: Collection.PLAY_SESSION,
     notes: playSessionNotes.value || "",
     tagIdList: [],
-    transactionEpoch: startEpoch, // Use start time as transaction epoch for sorting
+    transactionEpoch: startTime.value, // Use start time as transaction epoch for sorting
     gamingSession: {
       gameId: playSessionGameId.value!,
       platformId: playSessionPlatformId.value!,
-      startTime: startEpoch,
-      endTime: endEpoch,
+      startTime: startTime.value,
+      endTime: endTime.value,
     },
   };
 
