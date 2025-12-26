@@ -9,6 +9,9 @@
           <!-- Review Text -->
           <q-input type="textarea" filled v-model="reviewText" label="Review Text" rows="6" lazy-rules />
 
+          <!-- Date Reviewed -->
+          <q-input filled v-model="dateReviewed" type="date" label="Date Reviewed" />
+
           <!-- Aspect Ratings -->
           <div class="q-mt-lg">
             <div class="text-subtitle2 q-mb-md">Individual Aspect Ratings (0-10)</div>
@@ -60,7 +63,7 @@
 
           <!-- Tags Management -->
           <div class="q-mt-lg">
-            <div class="text-subtitle2 q-mb-md">Tags</div>
+            <div class="text-subtitle2 q-mb-md">Tags (For the Game)</div>
             <select-tag v-model="gameTags" label="Tags" />
           </div>
 
@@ -137,6 +140,7 @@ const isLoading = ref(false);
 const reviewForm: Ref<QForm | null> = ref(null);
 
 const reviewText: Ref<string | null> = ref("");
+const dateReviewed: Ref<string | null> = ref(null);
 const aspectRatings: Ref<ReviewAspectRatings> = ref({
   story: null,
   gameplay: null,
@@ -189,6 +193,23 @@ function onMetricChanged() {
   // Trigger reactivity
 }
 
+// Helper function to format date for date input (YYYY-MM-DD)
+function formatDateForInput(epoch: number | null | undefined): string | null {
+  if (!epoch) return null;
+  const date = new Date(epoch);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Helper function to parse date input to epoch
+function parseDateInput(dateString: string | null): number | null {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return date.getTime();
+}
+
 // Load existing review if editing
 onMounted(async () => {
   isLoading.value = true;
@@ -204,6 +225,7 @@ onMounted(async () => {
     const res = (await pouchdbService.getDocById(props.existingReviewId)) as Review;
     initialReview = res;
     reviewText.value = res.reviewText || "";
+    dateReviewed.value = formatDateForInput(res.dateReviewed);
     if (res.aspectRatings) {
       aspectRatings.value = {
         story: res.aspectRatings.story ?? null,
@@ -222,6 +244,10 @@ onMounted(async () => {
         nostalgia: res.metrics.nostalgia ?? null,
       };
     }
+  } else {
+    // Set default date reviewed to today for new reviews
+    const today = new Date();
+    dateReviewed.value = formatDateForInput(today.getTime());
   }
 
   isLoading.value = false;
@@ -256,6 +282,7 @@ async function okClicked() {
     reviewText: reviewText.value || null,
     aspectRatings: Object.keys(cleanAspectRatings).length > 0 ? cleanAspectRatings : undefined,
     metrics: Object.keys(cleanMetrics).length > 0 ? cleanMetrics : undefined,
+    dateReviewed: parseDateInput(dateReviewed.value),
   };
 
   if (initialReview) {

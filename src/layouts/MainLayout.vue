@@ -130,6 +130,12 @@ const gamingList = [
 const advancedList = computed(() => {
   const list: any[] = [
     {
+      title: "Reviews",
+      caption: "Game reviews",
+      icon: "rate_review",
+      link: "#/reviews",
+    },
+    {
       title: "Pro Mode - Games",
       caption: "Bulk edit games",
       icon: "table_chart",
