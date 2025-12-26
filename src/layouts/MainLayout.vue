@@ -96,6 +96,12 @@ const route = useRoute();
 
 const gamingList = [
   {
+    title: "Dashboard",
+    caption: "Overview and statistics",
+    icon: "dashboard",
+    link: "#/dashboard",
+  },
+  {
     title: "Games",
     caption: "Manage your game library",
     icon: "sports_esports",
