@@ -85,6 +85,16 @@ class GameService {
         totalMs += session.gamingSession.endTime - session.gamingSession.startTime;
       }
     });
+
+    // Include untracked playtime from the game model (if not filtering by platform)
+    // This represents playtime before tracking started or from CSV import
+    if (!platformId) {
+      const game = await this.getGame(gameId);
+      if (game?.untrackedPlaytime) {
+        totalMs += game.untrackedPlaytime;
+      }
+    }
+
     return totalMs; // Returns milliseconds
   }
 
