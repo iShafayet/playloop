@@ -13,15 +13,11 @@
       <div class="q-pa-md">
         <div class="row q-gutter-md items-center">
           <div class="col-12 col-sm-auto">
-            <month-and-year-input 
-              v-model:month="filterMonth" 
-              v-model:year="filterYear" 
-              @selection="monthAndYearSelected()"
-            />
+            <month-and-year-input v-model:month="filterMonth" v-model:year="filterYear" @selection="monthAndYearSelected()" />
           </div>
           <div class="col text-right" v-if="!isLoading && cachedInferredRecordList.length > 0">
             <q-chip color="primary" text-color="white" icon="sports_esports">
-              {{ cachedInferredRecordList.length }} session{{ cachedInferredRecordList.length !== 1 ? 's' : '' }}
+              {{ cachedInferredRecordList.length }} session{{ cachedInferredRecordList.length !== 1 ? "s" : "" }}
             </q-chip>
           </div>
         </div>
@@ -38,20 +34,14 @@
           <q-icon name="sports_esports" size="80px" color="grey-4" />
           <div class="text-h6 q-mt-md text-grey-6">No sessions found</div>
           <div class="text-body2 text-grey-6 q-mt-xs">Try selecting a different month or add a new session</div>
-          <q-btn 
-            color="primary" 
-            label="Add Session" 
-            icon="add" 
-            @click="addSessionClicked" 
-            class="q-mt-md"
-          />
+          <q-btn color="primary" label="Add Session" icon="add" @click="addSessionClicked" class="q-mt-md" />
         </div>
 
         <!-- Sessions List -->
         <template v-if="!isLoading && rows.length > 0">
           <div v-for="(playSession, index) in rows" :key="playSession._id">
             <!-- Date Header -->
-            <div 
+            <div
               v-if="index === 0 || prettifyDate(rows[index].transactionEpoch) !== prettifyDate(rows[index - 1].transactionEpoch)"
               class="date-header q-mb-md q-mt-lg"
             >
@@ -65,12 +55,7 @@
             </div>
 
             <!-- Session Card -->
-            <q-card 
-              v-if="playSession.gamingSession" 
-              flat 
-              bordered 
-              class="session-card q-mb-md"
-            >
+            <q-card v-if="playSession.gamingSession" flat bordered class="session-card q-mb-md">
               <q-card-section>
                 <div class="row items-start q-gutter-md">
                   <!-- Main Content -->
@@ -81,7 +66,7 @@
                         {{ playSession.gamingSession.game?.name || "Unknown Game" }}
                       </span>
                     </div>
-                    
+
                     <div class="row items-center q-gutter-md q-mt-sm" :class="$q.screen.lt.sm ? 'q-gutter-y-xs' : ''">
                       <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
                         <q-icon name="computer" size="16px" color="grey-6" />
@@ -89,14 +74,14 @@
                           {{ playSession.gamingSession.platform?.name || "Unknown Platform" }}
                         </span>
                       </div>
-                      
+
                       <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
                         <q-icon name="schedule" size="16px" color="grey-6" />
                         <span class="text-body2 text-grey-7">
                           {{ formatPlaytime(getSessionDuration(playSession)) }}
                         </span>
                       </div>
-                      
+
                       <div class="row items-center q-gutter-xs" :class="$q.screen.lt.sm ? 'col-12' : ''">
                         <q-icon name="access_time" size="16px" color="grey-6" />
                         <span class="text-body2 text-grey-7">
@@ -107,12 +92,7 @@
 
                     <!-- Notes -->
                     <div v-if="playSession.notes" class="q-mt-sm">
-                      <q-chip 
-                        size="sm" 
-                        color="grey-2" 
-                        text-color="grey-8" 
-                        icon="note"
-                      >
+                      <q-chip size="sm" color="grey-2" text-color="grey-8" icon="note">
                         {{ playSession.notes }}
                       </q-chip>
                     </div>
@@ -121,24 +101,8 @@
                   <!-- Actions -->
                   <div class="col-auto">
                     <div class="column q-gutter-xs">
-                      <q-btn 
-                        flat 
-                        round 
-                        color="primary" 
-                        icon="edit" 
-                        size="sm"
-                        @click="editSessionClicked(playSession)"
-                        title="Edit session"
-                      />
-                      <q-btn 
-                        flat 
-                        round 
-                        color="negative" 
-                        icon="delete" 
-                        size="sm"
-                        @click="deleteClicked(playSession)"
-                        title="Delete session"
-                      />
+                      <q-btn flat round color="primary" icon="edit" size="sm" @click="editSessionClicked(playSession)" title="Edit session" />
+                      <q-btn flat round color="negative" icon="delete" size="sm" @click="deleteClicked(playSession)" title="Delete session" />
                     </div>
                   </div>
                 </div>
@@ -148,13 +112,7 @@
 
           <!-- Pagination -->
           <div class="q-pa-lg flex flex-center">
-            <q-pagination 
-              v-model="paginationCurrentPage" 
-              :max="paginationMaxPage" 
-              input
-              :max-pages="7"
-              direction-links
-            />
+            <q-pagination v-model="paginationCurrentPage" :max="paginationMaxPage" input :max-pages="7" direction-links />
           </div>
         </template>
       </div>
@@ -211,7 +169,7 @@ function formatPlaytime(ms: number): string {
 
 function formatTime(epoch: number): string {
   const date = new Date(epoch);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function getSessionDuration(playSession: PlaySession): number {
@@ -316,7 +274,7 @@ onMounted(() => {
 
 .session-card {
   transition: box-shadow 0.2s ease;
-  
+
   &:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
@@ -328,4 +286,3 @@ onMounted(() => {
   }
 }
 </style>
-

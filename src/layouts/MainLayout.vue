@@ -5,7 +5,7 @@
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
 
         <q-toolbar-title>
-          {{ $route.meta.title || "Playloop" }}
+          {{ route.meta.title || "Playloop" }}
         </q-toolbar-title>
 
         <!-- Offline Indicator -->
@@ -21,7 +21,7 @@
           <span class="sync-spinner-text">Syncing...</span>
         </div>
 
-        <div v-if="$route.meta.title && !isDevDatabase && !isDevMachine">Playloop</div>
+        <div v-if="route.meta.title && !isDevDatabase && !isDevMachine">Playloop</div>
         <div class="dev-mode-notification" v-if="isDevDatabase">DEV DB</div>
         <div class="dev-mode-warning" v-if="!isDevDatabase && isDevMachine && !isOfflineDatabase">PROD DB in DEV ENV</div>
 
@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import EssentialLink from "components/sidebar/EssentialLink.vue";
+import EssentialLink from "src/components/sidebar/EssentialLink.vue";
 import { useQuasar } from "quasar";
 import { OFFLINE_DOMAIN } from "src/constants/auth-constants";
 import { APP_BUILD_DATE, APP_BUILD_VERSION, APP_VERSION } from "src/constants/config-constants";
