@@ -212,7 +212,7 @@ function getAvailablePlatforms(currentPlatformId: string | null): Platform[] {
   const selectedIds = platformOwnershipPairs.value
     .map((p) => p.platformId)
     .filter((id) => id && id !== currentPlatformId);
-  return platformOptions.value.filter((p) => !selectedIds.includes(p._id));
+  return platformOptions.value.filter((p) => p._id && !selectedIds.includes(p._id));
 }
 
 function addPlatformPair() {
