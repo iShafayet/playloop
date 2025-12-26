@@ -1,16 +1,9 @@
-/* eslint-env node */
-
-/*
- * This file runs in a Node context (it's NOT transpiled by Babel), so use only
- * the ES6 features that are supported by your Node version. https://node.green/
- */
-
 // Configuration for your app
-// https://v2.quasar.dev/quasar-cli-vite/quasar-config-js
+// https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
-const { configure } = require("quasar/wrappers");
+import { defineConfig } from '#q-app/wrappers';
 
-module.exports = configure(function (/* ctx */) {
+export default defineConfig((/* ctx */) => {
   return {
     eslint: {
       // fix: true,
@@ -50,7 +43,7 @@ module.exports = configure(function (/* ctx */) {
     build: {
       target: {
         browser: ["es2019", "edge88", "firefox78", "chrome87", "safari13.1"],
-        node: "node16",
+        node: "node20",
       },
 
       vueRouterMode: "hash", // available values: 'hash', 'history'
@@ -141,7 +134,7 @@ module.exports = configure(function (/* ctx */) {
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-pwa/configuring-pwa
     pwa: {
-      workboxMode: "generateSW", // or 'injectManifest'
+      workboxMode: "GenerateSW", // or 'InjectManifest'
       injectPwaMetaTags: true,
       swFilename: "sw.js",
       manifestFilename: "manifest.json",
