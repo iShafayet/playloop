@@ -19,6 +19,7 @@ export type Game = {
   platformIdList: string[]; // Kept for backward compatibility, can be derived from ownershipList
   ownershipList?: GameOwnershipEntry[];
   untrackedHistoryList?: GameUntrackedHistoryEntry[];
+  untrackedPlaytime?: number; // Total playtime in milliseconds before tracking started
   tagIdList?: string[];
   rating?: number | null; // 0-10, step 0.5, null = not rated
   releaseDate?: number; // epoch timestamp

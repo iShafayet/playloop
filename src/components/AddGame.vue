@@ -91,6 +91,22 @@
           
           <q-separator class="q-my-md" />
           
+          <div class="q-mb-md">
+            <div class="text-subtitle2 q-mb-sm">Untracked Playtime</div>
+            <div class="text-body2 text-grey-7 q-mb-sm">
+              Total playtime (in hours) before you started tracking sessions. This will be added to your tracked playtime for accurate totals.
+            </div>
+            <q-input
+              filled
+              v-model="untrackedPlaytimeHours"
+              type="number"
+              label="Untracked Playtime (hours)"
+              :min="0"
+              :step="0.5"
+              hint="Enter total hours played before tracking"
+            />
+          </div>
+          
           <q-toggle 
             v-model="hasUntrackedHistory" 
             label="Had untracked history before starting to track" 
@@ -185,6 +201,7 @@ const releaseDate: Ref<string | null> = ref(null);
 const selectedTagIds: Ref<string[]> = ref([]);
 const rating: Ref<number | null> = ref(null);
 const isRetroGame = ref(false);
+const untrackedPlaytimeHours: Ref<number | null> = ref(null);
 const hasUntrackedHistory = ref(false);
 
 const platformOptions: Ref<Platform[]> = ref([]);
@@ -253,6 +270,9 @@ onMounted(async () => {
       selectedTagIds.value = res.tagIdList || [];
       rating.value = res.rating !== undefined ? res.rating : null;
       isRetroGame.value = res.isRetroGame || false;
+      untrackedPlaytimeHours.value = res.untrackedPlaytime
+        ? res.untrackedPlaytime / (1000 * 60 * 60) // Convert milliseconds to hours
+        : null;
 
       // Load existing ownership from game.ownershipList
       if (res.ownershipList && res.ownershipList.length > 0) {
@@ -336,6 +356,9 @@ async function okClicked() {
     platformIdList: selectedPlatformIds, // Keep for backward compatibility
     ownershipList: ownershipList,
     untrackedHistoryList: untrackedHistoryList.length > 0 ? untrackedHistoryList : undefined,
+    untrackedPlaytime: untrackedPlaytimeHours.value !== null && untrackedPlaytimeHours.value > 0
+      ? untrackedPlaytimeHours.value * 1000 * 60 * 60 // Convert hours to milliseconds
+      : undefined,
     tagIdList: selectedTagIds.value.length > 0 ? selectedTagIds.value : undefined,
     rating: rating.value !== null ? rating.value : undefined,
     isRetroGame: isRetroGame.value,
