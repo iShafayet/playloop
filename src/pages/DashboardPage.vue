@@ -195,7 +195,7 @@
                   </div>
                   <div v-if="favoritePlatform" class="text-body2 text-grey-7">
                     <q-icon name="play_circle" size="16px" class="q-mr-xs" />
-                    {{ favoritePlatform.sessionCount }} sessions
+                    {{ favoritePlatform.sessionCount }} {{ favoritePlatform.byGames ? "games" : "sessions" }}
                   </div>
                 </q-card-section>
               </q-card>
@@ -300,16 +300,19 @@ const onHoldGames = ref(0);
 const droppedGames = ref(0);
 const retroGamesCount = ref(0);
 const mostPlayedGame = ref<{ name: string; playtime: number } | null>(null);
-const favoritePlatform = ref<{ name: string; sessionCount: number } | null>(null);
+const favoritePlatform = ref<{ name: string; sessionCount: number; byGames?: boolean } | null>(null);
 const recentGames = ref<Array<Game & { lastPlayedDate: number | null }>>([]);
 
 function formatPlaytime(ms: number): string {
-  const hours = Math.floor(ms / (1000 * 60 * 60));
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
+  const totalMinutes = Math.floor(ms / (1000 * 60));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (days < 99) parts.push(`${minutes}m`);
+  return parts.length > 0 ? parts.join(" ") : "0m";
 }
 
 async function loadData() {
@@ -353,6 +356,18 @@ async function loadData() {
       }
     });
 
+    // Include manually entered (untracked) playtime from games so total hours and
+    // "most played" reflect both session tracking and manual entry
+    games.forEach((game) => {
+      if (!game._id) return;
+      const untracked = game.untrackedPlaytime || 0;
+      if (untracked > 0) {
+        totalMs += untracked;
+        const current = gamePlaytimeMap.get(game._id) || 0;
+        gamePlaytimeMap.set(game._id, current + untracked);
+      }
+    });
+
     totalPlaytime.value = totalMs;
 
     // Find most played game
@@ -375,7 +390,7 @@ async function loadData() {
       }
     }
 
-    // Find favorite platform
+    // Find favorite platform (by session count, or by game count when no sessions)
     let maxSessions = 0;
     let favoritePlatformId = "";
     platformSessionMap.forEach((sessionCount, platformId) => {
@@ -385,35 +400,76 @@ async function loadData() {
       }
     });
 
+    let favoriteByGames = false;
+    if (!favoritePlatformId && games.length > 0) {
+      // No sessions: use platform with most games in library
+      const platformGameCount = new Map<string, number>();
+      games.forEach((game) => {
+        const ids = game.ownershipList?.map((o) => o.platformId) ?? game.platformIdList ?? [];
+        ids.forEach((platformId) => {
+          platformGameCount.set(platformId, (platformGameCount.get(platformId) ?? 0) + 1);
+        });
+      });
+      let maxGames = 0;
+      platformGameCount.forEach((count, platformId) => {
+        if (count > maxGames) {
+          maxGames = count;
+          favoritePlatformId = platformId;
+        }
+      });
+      if (favoritePlatformId) {
+        maxSessions = maxGames;
+        favoriteByGames = true;
+      }
+    }
+
     if (favoritePlatformId) {
       const platform = await platformService.getPlatform(favoritePlatformId);
       if (platform) {
         favoritePlatform.value = {
           name: platform.name,
           sessionCount: maxSessions,
+          byGames: favoriteByGames,
         };
       }
     }
 
     loadingIndicator.value?.startPhase({ phase: 3, weight: 30, label: "Loading status history" });
 
+    // Reset completion counters before recomputing
+    completedGames.value = 0;
+    inProgressGames.value = 0;
+    onHoldGames.value = 0;
+    droppedGames.value = 0;
+
     // Load status history for completion stats
     const statusRes = await pouchdbService.listByCollection(Collection.GAME_STATUS_HISTORY);
     const allStatusHistory = statusRes.docs as GameStatusHistory[];
 
-    // Get latest status for each game-platform combination
-    const gameStatusMap = new Map<string, string>();
-    allStatusHistory.forEach((status) => {
-      const key = `${status.gameId}-${status.platformId}`;
-      const existing = gameStatusMap.get(key);
-      if (!existing || status.timestamp > (allStatusHistory.find((s) => `${s.gameId}-${s.platformId}` === key && s.status === existing)?.timestamp || 0)) {
-        gameStatusMap.set(key, status.status);
+    // Latest status per game-platform (by timestamp)
+    const gameStatusMap = new Map<string, { status: string; timestamp: number }>();
+    allStatusHistory.forEach((s) => {
+      const key = `${s.gameId}-${s.platformId}`;
+      const prev = gameStatusMap.get(key);
+      if (!prev || s.timestamp > prev.timestamp) {
+        gameStatusMap.set(key, { status: s.status, timestamp: s.timestamp });
       }
     });
 
-    // Count statuses
-    gameStatusMap.forEach((status) => {
-      switch (status) {
+    // Merge untracked history (from Add Game): statuses not in history
+    games.forEach((game) => {
+      if (!game._id || !game.untrackedHistoryList) return;
+      game.untrackedHistoryList.forEach((u) => {
+        const key = `${game._id}-${u.platformId}`;
+        if (!gameStatusMap.has(key)) {
+          gameStatusMap.set(key, { status: u.status, timestamp: 0 });
+        }
+      });
+    });
+
+    // Count statuses (each game-platform pair counted once)
+    gameStatusMap.forEach((entry) => {
+      switch (entry.status) {
         case "completed":
           completedGames.value++;
           break;

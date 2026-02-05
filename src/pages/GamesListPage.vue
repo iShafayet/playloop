@@ -72,6 +72,20 @@
             </q-td>
           </template>
 
+          <template v-slot:body-cell-completionStatus="rowWrapper">
+            <q-td :props="rowWrapper">
+              <q-chip
+                v-if="rowWrapper.row.completionStatus"
+                :label="formatStatusLabel(rowWrapper.row.completionStatus)"
+                :color="getStatusColor(rowWrapper.row.completionStatus)"
+                text-color="white"
+                size="sm"
+                dense
+              />
+              <span v-else class="text-grey-6">—</span>
+            </q-td>
+          </template>
+
           <template v-slot:body-cell-tags="rowWrapper">
             <q-td :props="rowWrapper">
               <q-chip
@@ -159,10 +173,19 @@
                       </div>
 
                       <!-- Metadata -->
-                      <div class="row q-gutter-md text-body2 text-grey-7">
+                      <div class="row q-gutter-md text-body2 text-grey-7 q-mb-sm">
                         <div class="row items-center q-gutter-xs">
                           <q-icon name="access_time" size="14px" />
                           <span>{{ game.lastPlayedDate ? new Date(game.lastPlayedDate).toLocaleDateString() : "Never" }}</span>
+                        </div>
+                        <div v-if="game.completionStatus" class="row items-center q-gutter-xs">
+                          <q-chip
+                            :label="formatStatusLabel(game.completionStatus)"
+                            :color="getStatusColor(game.completionStatus)"
+                            text-color="white"
+                            size="sm"
+                            dense
+                          />
                         </div>
                         <div v-if="game.isRetroGame" class="row items-center q-gutter-xs">
                           <q-icon name="history" size="14px" />
@@ -230,6 +253,7 @@ import { platformService } from "src/services/platform-service";
 import { tagService } from "src/services/tag-service";
 import { pouchdbService } from "src/services/pouchdb-service";
 import { Collection } from "src/constants/constants";
+import { GameStatusHistory } from "src/models/game-status-history";
 import { usePaginationSizeStore } from "src/stores/pagination";
 import { ref, watch, type Ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
@@ -272,6 +296,13 @@ const columns = [
     field: "lastPlayedDate",
     sortable: true,
     format: (val: number | null) => (val ? new Date(val).toLocaleDateString() : "Never"),
+  },
+  {
+    name: "completionStatus",
+    align: "left",
+    label: "Status",
+    field: "completionStatus",
+    sortable: true,
   },
   {
     name: "isRetroGame",
@@ -338,6 +369,49 @@ function getTagContrastColor(tagId: string): string {
   return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
+function formatStatusLabel(status: string): string {
+  if (!status) return "Not set";
+  return status
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function getStatusColor(status: string): string {
+  switch (status) {
+    case "completed":
+      return "green";
+    case "in-progress":
+      return "blue";
+    case "on-hold":
+      return "orange";
+    case "dropped":
+      return "red";
+    default:
+      return "grey";
+  }
+}
+
+/** Priority order for display: show the "highest" status when a game has multiple. */
+const STATUS_PRIORITY: string[] = ["completed", "in-progress", "on-hold", "dropped"];
+
+function getDisplayStatus(
+  game: Game,
+  gamePlatformStatusMap: Map<string, string>
+): string | null {
+  const statuses = new Set<string>();
+  if (game._id) {
+    gamePlatformStatusMap.forEach((status, key) => {
+      if (key.startsWith(`${game._id}-`)) statuses.add(status);
+    });
+  }
+  game.untrackedHistoryList?.forEach((u) => statuses.add(u.status));
+  for (const s of STATUS_PRIORITY) {
+    if (statuses.has(s)) return s;
+  }
+  return null;
+}
+
 function getFirstPlatformName(game: Game): string {
   if (!game.platformIdList || game.platformIdList.length === 0) {
     return "";
@@ -375,6 +449,13 @@ function applyOrdering(docList: any[], sortBy: string, descending: boolean) {
       const aRating = a.rating ?? -1; // Treat null as -1 for sorting (will appear last)
       const bRating = b.rating ?? -1;
       return (bRating - aRating) * (descending ? -1 : 1);
+    });
+  } else if (sortBy === "completionStatus") {
+    const order = (s: string | null) => (s ? STATUS_PRIORITY.indexOf(s) : -1);
+    docList.sort((a, b) => {
+      const aOrd = order(a.completionStatus ?? null);
+      const bOrd = order(b.completionStatus ?? null);
+      return (aOrd - bOrd) * (descending ? -1 : 1);
     });
   }
 }
@@ -462,30 +543,33 @@ async function dataForTableRequested(props: any) {
       });
     }
 
-    // Apply completion status filter (need to load status history)
-    if (gameFilters.value.completionFilter !== null) {
-      const statusRes = await pouchdbService.listByCollection(Collection.GAME_STATUS_HISTORY);
-      const allStatusHistory = statusRes.docs as any[];
-      
-      // Get latest status for each game
-      const gameStatusMap = new Map<string, string>();
-      allStatusHistory.forEach((status) => {
-        const key = status.gameId;
-        const existing = gameStatusMap.get(key);
-        if (!existing || status.timestamp > (allStatusHistory.find((s) => s.gameId === key && s.status === existing)?.timestamp || 0)) {
-          gameStatusMap.set(key, status.status);
-        }
-      });
-
-      docList = docList.filter((game) => {
-        if (!game._id) return false;
-        const status = gameStatusMap.get(game._id);
-        return status === gameFilters.value!.completionFilter;
-      });
-    }
+    // Completion status filter is applied below after we build gamePlatformStatusMap
   }
 
-  // Calculate last played date for each game
+  // Build latest status per game-platform (for Status column and filter)
+  const statusRes = await pouchdbService.listByCollection(Collection.GAME_STATUS_HISTORY);
+  const allStatusHistory = (statusRes.docs as GameStatusHistory[]) ?? [];
+  const gamePlatformStatusMap = new Map<string, string>();
+  [...allStatusHistory]
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .forEach((s) => {
+      const key = `${s.gameId}-${s.platformId}`;
+      if (!gamePlatformStatusMap.has(key)) gamePlatformStatusMap.set(key, s.status);
+    });
+  docList.forEach((game) => {
+    if (!game._id || !game.untrackedHistoryList) return;
+    game.untrackedHistoryList.forEach((u) => {
+      const key = `${game._id}-${u.platformId}`;
+      if (!gamePlatformStatusMap.has(key)) gamePlatformStatusMap.set(key, u.status);
+    });
+  });
+
+  // When filtering by completion, use display status per game
+  if (gameFilters.value?.completionFilter != null) {
+    docList = docList.filter((game) => getDisplayStatus(game, gamePlatformStatusMap) === gameFilters.value!.completionFilter);
+  }
+
+  // Calculate last played date and completion status for each game
   const gamesWithLastPlayed = await Promise.all(
     docList.map(async (game) => {
       let lastPlayedDate: number | null = null;
@@ -508,6 +592,7 @@ async function dataForTableRequested(props: any) {
       return {
         ...game,
         lastPlayedDate,
+        completionStatus: getDisplayStatus(game, gamePlatformStatusMap),
       };
     })
   );

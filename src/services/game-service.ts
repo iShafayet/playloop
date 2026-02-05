@@ -100,18 +100,32 @@ class GameService {
 
   async getFirstPlayedDate(gameId: string): Promise<number | null> {
     const sessions = await this.getGameSessions(gameId);
-    if (sessions.length === 0) return null;
-    const dates = sessions.map((s) => s.gamingSession?.startTime || s.transactionEpoch).filter((d) => d) as number[];
-    if (dates.length === 0) return null;
-    return Math.min(...dates);
+    const sessionDates = sessions
+      .map((s) => s.gamingSession?.startTime || s.transactionEpoch)
+      .filter((d) => d) as number[];
+    const game = await this.getGame(gameId);
+    const untrackedDates =
+      game?.untrackedHistoryList
+        ?.filter((u) => u.lastPlayedDate)
+        .map((u) => u.lastPlayedDate!) ?? [];
+    const allDates = [...sessionDates, ...untrackedDates];
+    if (allDates.length === 0) return null;
+    return Math.min(...allDates);
   }
 
   async getLastPlayedDate(gameId: string): Promise<number | null> {
     const sessions = await this.getGameSessions(gameId);
-    if (sessions.length === 0) return null;
-    const dates = sessions.map((s) => s.gamingSession?.endTime || s.transactionEpoch).filter((d) => d) as number[];
-    if (dates.length === 0) return null;
-    return Math.max(...dates);
+    const sessionDates = sessions
+      .map((s) => s.gamingSession?.endTime || s.transactionEpoch)
+      .filter((d) => d) as number[];
+    const game = await this.getGame(gameId);
+    const untrackedDates =
+      game?.untrackedHistoryList
+        ?.filter((u) => u.lastPlayedDate)
+        .map((u) => u.lastPlayedDate!) ?? [];
+    const allDates = [...sessionDates, ...untrackedDates];
+    if (allDates.length === 0) return null;
+    return Math.max(...allDates);
   }
 
   async getAverageSessionDuration(gameId: string): Promise<number> {

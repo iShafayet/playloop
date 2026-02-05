@@ -167,10 +167,8 @@ class BackupRestoreService {
           TotalPlaytimeHours: "",
         };
 
-        // Calculate total playtime: untracked + session playtime
-        const untrackedPlaytimeMs = game.untrackedPlaytime || 0;
-        const sessionPlaytimeMs = await gameService.getTotalPlaytime(game._id!);
-        const totalPlaytimeMs = untrackedPlaytimeMs + sessionPlaytimeMs;
+        // Total playtime (getTotalPlaytime already includes sessions + untracked)
+        const totalPlaytimeMs = await gameService.getTotalPlaytime(game._id!);
         const totalPlaytimeHours = totalPlaytimeMs / (1000 * 60 * 60);
         row.TotalPlaytimeHours = totalPlaytimeHours > 0 ? totalPlaytimeHours.toFixed(2) : "";
 
