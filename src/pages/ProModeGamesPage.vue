@@ -590,7 +590,7 @@ function updateStatus(gameId: string, platformId: string, value: GameStatus | nu
   if (!target) return;
   let list = target.untrackedHistoryList ?? [];
   const idx = list.findIndex((u) => u.platformId === platformId);
-  if (value != null && value !== "") {
+  if (value != null) {
     const entry: GameUntrackedHistoryEntry = { platformId, status: value };
     if (idx >= 0) {
       list[idx] = { ...list[idx], status: value };
@@ -774,7 +774,7 @@ function savePlatformDetailsDialog() {
     ownershipType: r.ownershipType,
   }));
   target.untrackedHistoryList = platformDetailsRows.value
-    .filter((r) => r.status != null && r.status !== "")
+    .filter((r) => r.status != null)
     .map((r) => ({
       platformId: r.platformId,
       status: r.status!,
