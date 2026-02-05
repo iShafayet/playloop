@@ -61,6 +61,8 @@ import DateTimeInput from "./lib/DateTimeInput.vue";
 // Props
 const props = defineProps<{
   existingPlaySessionId?: string | null;
+  preselectedGameId?: string | null;
+  preselectedPlatformId?: string | null;
 }>();
 
 // Emits
@@ -181,6 +183,13 @@ onMounted(async () => {
     // Calculate initial duration
     calculateDuration();
   } else {
+    // Preselect game (and optionally platform) when opening from single game page
+    if (props.preselectedGameId) {
+      playSessionGameId.value = props.preselectedGameId;
+    }
+    if (props.preselectedPlatformId) {
+      playSessionPlatformId.value = props.preselectedPlatformId;
+    }
     // Set default times to now
     startTime.value = Date.now();
     // Set default duration to 1 hour

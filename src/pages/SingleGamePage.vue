@@ -614,25 +614,9 @@ async function loadData() {
     totalSessions.value = sessions.value.length;
     averageSessionDuration.value = await gameService.getAverageSessionDuration(gameId);
 
-    // Use sessions for dates if available, otherwise fall back to untracked history
-    if (sessions.value.length > 0) {
-      firstPlayedDate.value = await gameService.getFirstPlayedDate(gameId);
-      lastPlayedDate.value = await gameService.getLastPlayedDate(gameId);
-    } else if (game.value?.untrackedHistoryList && game.value.untrackedHistoryList.length > 0) {
-      // Use untracked history as source of truth when no sessions exist
-      const datesWithLastPlayed = game.value.untrackedHistoryList.filter((u) => u.lastPlayedDate).map((u) => u.lastPlayedDate!);
-
-      if (datesWithLastPlayed.length > 0) {
-        firstPlayedDate.value = Math.min(...datesWithLastPlayed);
-        lastPlayedDate.value = Math.max(...datesWithLastPlayed);
-      } else {
-        firstPlayedDate.value = null;
-        lastPlayedDate.value = null;
-      }
-    } else {
-      firstPlayedDate.value = null;
-      lastPlayedDate.value = null;
-    }
+    // First/last played consolidate sessions and manual (untracked) history
+    firstPlayedDate.value = await gameService.getFirstPlayedDate(gameId);
+    lastPlayedDate.value = await gameService.getLastPlayedDate(gameId);
 
     platformBreakdown.value = await gameService.getPlatformBreakdown(gameId);
 
@@ -664,7 +648,15 @@ async function editGameClicked() {
 
 async function addSessionClicked() {
   if (!game.value) return;
-  $q.dialog({ component: AddGamingSession }).onOk(() => {
+  const platformId =
+    game.value.ownershipList?.[0]?.platformId ?? game.value.platformIdList?.[0] ?? null;
+  $q.dialog({
+    component: AddGamingSession,
+    componentProps: {
+      preselectedGameId: game.value._id,
+      preselectedPlatformId: platformId,
+    },
+  }).onOk(() => {
     loadData();
   });
 }
