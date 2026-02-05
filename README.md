@@ -18,17 +18,12 @@ Stats, completion breakdown, and recently played games.
 
 Bulk-edit games in a spreadsheet-style view.
 
-### Game detail (mobile)
+### Mobile
 
-![Game page](docs/screenshots/screenshot-mobile-game-page.png)
-
-Sessions, platforms, status, and playtime for a game.
-
-### Edit game (mobile)
-
-![Edit game](docs/screenshots/screenshot-mobile-edit-page.png)
-
-Update game details, ownership, and completion status.
+| Game detail | Edit game |
+| ---------- | --------- |
+| ![Game page](docs/screenshots/screenshot-mobile-game-page.png) | ![Edit game](docs/screenshots/screenshot-mobile-edit-page.png) |
+| Sessions, platforms, status, and playtime. | Update details, ownership, and completion status. |
 
 ---
 
